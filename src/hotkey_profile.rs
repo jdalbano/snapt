@@ -1,6 +1,8 @@
 use device_query::Keycode;
 
 use crate::hotkey::*;
+use crate::window_manager;
+use crate::window_manager::WindowState;
 
 enum KeyResult<'a> {
     Some(&'a Hotkey),
@@ -56,22 +58,22 @@ impl HotkeyProfile {
 }
 
 fn dock_left(){
-    print!("dock left")
+    window_manager::process_window_state_change(WindowState::Left);
 }
 
 fn dock_right(){
-    print!("dock right")
+    window_manager::process_window_state_change(WindowState::Right);
 }
 
 fn dock_top(){
-    print!("dock top")
+    window_manager::process_window_state_change(WindowState::Top);
 }
 
 fn dock_bottom(){
-    print!("dock bottom")
+    window_manager::process_window_state_change(WindowState::Bottom);
 }
 
 fn dock_full(){
-    print!("dock full")
+    window_manager::process_window_state_change(WindowState::Full);
 }
 

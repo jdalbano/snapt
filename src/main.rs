@@ -3,6 +3,8 @@ use device_query::{DeviceQuery, DeviceState, Keycode};
 mod hotkey_profile;
 mod hotkey_loader;
 mod hotkey;
+mod window_manager;
+mod window_transform;
 
 fn main() {
     let device_state = DeviceState::new();
