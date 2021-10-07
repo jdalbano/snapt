@@ -7,3 +7,4 @@ edition = "2018"
 
 [dependencies]
 device_query = "0.2.8"
+spin_sleep = "1.0.0"
