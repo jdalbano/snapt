@@ -1,6 +1,6 @@
 use winapi;
 
-use crate::window_transform::*;
+use crate::window::window_transform::*;
 
 type HWND = winapi::shared::windef::HWND__;
 type RECT = winapi::shared::windef::RECT;

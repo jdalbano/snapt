@@ -1,8 +1,8 @@
 use device_query::Keycode;
 
-use crate::hotkey::*;
-use crate::window_manager;
-use crate::window_manager::WindowState;
+use crate::hotkeys::hotkey::*;
+use crate::window::window_manager;
+use crate::window::window_manager::WindowState;
 
 enum KeyResult<'a> {
     Some(&'a Hotkey),

@@ -1,6 +1,6 @@
 use device_query::Keycode;
 
-use crate::hotkey_profile::*;
+use crate::hotkeys::hotkey_profile::*;
 
 pub fn load_hotkey_profile() -> HotkeyProfile {
     load_default_hotkey_profile()
