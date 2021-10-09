@@ -9,7 +9,6 @@ type RECT = winapi::shared::windef::RECT;
 type MONTIORINFO = winapi::um::winuser::MONITORINFO;
 type LPVOID = winapi::shared::minwindef::LPVOID;
 
-
 pub fn process_window_state_change(state: WindowState) {
     if let WindowState::None = state {
         return
@@ -17,6 +16,8 @@ pub fn process_window_state_change(state: WindowState) {
 
     unsafe{                
         let window = winapi::um::winuser::GetForegroundWindow();
+
+        restore_window(&mut *window);
 
         let (did_window_bounds_succeed, window_bounds) = get_window_bounds(&mut *window);
         let (did_shadow_bounds_succeed, shadow_bounds) = get_shadow_bounds(&mut *window);
@@ -36,6 +37,10 @@ pub fn process_window_state_change(state: WindowState) {
             }
         }
     }
+}
+
+unsafe fn restore_window(window: &mut HWND) {
+    winapi::um::winuser::ShowWindow(window, winapi::um::winuser::SW_NORMAL);
 }
 
 unsafe fn get_window_bounds(window: &mut HWND) -> (bool, RECT) {
