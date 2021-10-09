@@ -17,23 +17,39 @@ pub fn process_window_state_change(state: WindowState) {
     unsafe{                
         let window = winapi::um::winuser::GetForegroundWindow();
 
-        restore_window(&mut *window);
+        let can_window_be_resized = check_if_window_can_be_resized(&mut *window);
 
-        let (did_window_bounds_succeed, window_bounds) = get_window_bounds(&mut *window);
-        let (did_shadow_bounds_succeed, shadow_bounds) = get_shadow_bounds(&mut *window);
+        if can_window_be_resized {
+            change_window_state(&mut *window, state);
+        }
+    }
+}
+
+unsafe fn check_if_window_can_be_resized(window: &mut HWND) -> bool {
+    // let window_style = winapi::um::winuser::GetWindowLongA(window, winapi::um::winuser::GWL_STYLE);
     
-        if did_window_bounds_succeed && did_shadow_bounds_succeed {
-            let size_result = get_screen_size(&mut *window);
+    // window_style == 
 
-            if let Ok(size_i) = size_result {
-                let pos_i = WindowTransform::new(window_bounds.left, window_bounds.top);
-                let (shadow_pos_offset, shadow_size_offset) = get_shadow_offsets(window_bounds, shadow_bounds);
+    true
+}
 
-                let transform_result = get_transform_for_window_state(&size_i, shadow_pos_offset, shadow_size_offset, state);
-                
-                if let Ok((pos_f, size_f)) = transform_result {
-                    change_window_to_state(&mut *window, pos_i, size_i, pos_f, size_f);
-                }
+unsafe fn change_window_state(window: &mut HWND, state: WindowState) {
+    restore_window(window);
+
+    let (did_window_bounds_succeed, window_bounds) = get_window_bounds(window);
+    let (did_shadow_bounds_succeed, shadow_bounds) = get_shadow_bounds(window);
+
+    if did_window_bounds_succeed && did_shadow_bounds_succeed {
+        let size_result = get_screen_size(window);
+
+        if let Ok(size_i) = size_result {
+            let pos_i = WindowTransform::new(window_bounds.left, window_bounds.top);
+            let (shadow_pos_offset, shadow_size_offset) = get_shadow_offsets(window_bounds, shadow_bounds);
+
+            let transform_result = get_transform_for_window_state(&size_i, shadow_pos_offset, shadow_size_offset, state);
+            
+            if let Ok((pos_f, size_f)) = transform_result {
+                set_window_pos_and_size(window, pos_i, size_i, pos_f, size_f);
             }
         }
     }
@@ -65,12 +81,6 @@ fn get_shadow_offsets(window_rect: RECT, shadow_rect: RECT) -> (WindowTransform,
     let shadow_pos_offset = WindowTransform::new(window_rect.left - shadow_rect.left, window_rect.top - shadow_rect.top);
     let shadow_size_offset = WindowTransform::new(window_rect.right - shadow_rect.right + (-1 * shadow_pos_offset.x), window_rect.bottom - shadow_rect.bottom + (-1 * shadow_pos_offset.y));
     (shadow_pos_offset, shadow_size_offset)
-}
-
-unsafe fn change_window_to_state(window: &mut HWND, pos_i: WindowTransform, size_i: WindowTransform, pos_f: WindowTransform, size_f: WindowTransform) {
-    if pos_i.x != pos_f.x || pos_i.y != pos_f.y || size_i.x != size_f.x || size_i.y != size_f.y {                
-        winapi::um::winuser::SetWindowPos(window, winapi::um::winuser::HWND_TOP, pos_f.x, pos_f.y, size_f.x, size_f.y, winapi::um::winuser::SWP_SHOWWINDOW);
-    }
 }
 
 fn get_transform_for_window_state(screen_size: &WindowTransform, shadow_pos_offset: WindowTransform, shadow_size_offset: WindowTransform, state: WindowState) -> Result<(WindowTransform, WindowTransform), ()>  {
@@ -125,4 +135,10 @@ unsafe fn get_current_monitor_info(window: &mut HWND) -> Result<MONTIORINFO, ()>
     else {
         Err(())
     }
+}
+
+unsafe fn set_window_pos_and_size(window: &mut HWND, pos_i: WindowTransform, size_i: WindowTransform, pos_f: WindowTransform, size_f: WindowTransform) {
+    // if pos_i.x != pos_f.x || pos_i.y != pos_f.y || size_i.x != size_f.x || size_i.y != size_f.y {                
+        winapi::um::winuser::SetWindowPos(window, winapi::um::winuser::HWND_TOP, pos_f.x, pos_f.y, size_f.x, size_f.y, winapi::um::winuser::SWP_SHOWWINDOW);
+    // }
 }
