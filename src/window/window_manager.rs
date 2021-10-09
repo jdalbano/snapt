@@ -53,7 +53,7 @@ pub fn process_window_state_change(state: WindowState) {
 
             print!("window left = {}, right = {}, top = {}, bottom = {}\n", (*window_rect).left, (*window_rect).right, (*window_rect).top, (*window_rect).bottom);
             print!("shadow left = {}, right = {}, top = {}, bottom = {}\n\n", (*shadow_rect).left, (*shadow_rect).right, (*shadow_rect).top, (*shadow_rect).bottom);
-
+            
             
 
             let pos_i = WindowTransform::new((*window_rect).left, (*window_rect).top);
@@ -61,11 +61,14 @@ pub fn process_window_state_change(state: WindowState) {
             let size_result = get_screen_size(&mut *window);
 
             if let Ok(size_i) = size_result {
-                let transform_result = get_transform_for_window_state(&size_i, state);
+                let shadow_pos_offset = WindowTransform::new((*window_rect).left - (*shadow_rect).left, (*window_rect).top - (*shadow_rect).top);
+                let shadow_size_offset = WindowTransform::new((*window_rect).right - (*shadow_rect).right + (-1 * shadow_pos_offset.x), (*window_rect).bottom - (*shadow_rect).bottom + (-1 * shadow_pos_offset.y));
+
+                print!("shadow size offset: x = {}, y = {}", shadow_size_offset.x, shadow_size_offset.y);
+
+                let transform_result = get_transform_for_window_state(&size_i, shadow_pos_offset, shadow_size_offset, state);
                 
                 if let Ok((pos_f, size_f)) = transform_result {
-                    // let pos_f_adjusted = WindowTransform::new(pos_f.x - shadow_buffer.x, pos_f.y - shadow_buffer.y);
-                    // let size_f_adjusted = WindowTransform::new(size_f.x + shadow_buffer.x * 2, size_f.y + shadow_buffer.y * 2);
                     change_window_to_state(&mut *window, pos_i, size_i, pos_f, size_f);
                 }
             }
@@ -79,18 +82,23 @@ unsafe fn change_window_to_state(window: &mut HWND, pos_i: WindowTransform, size
     }
 }
 
-fn get_transform_for_window_state(screen_size: &WindowTransform, state: WindowState) -> Result<(WindowTransform, WindowTransform), ()>  {
+fn get_transform_for_window_state(screen_size: &WindowTransform, shadow_pos_offset: WindowTransform, shadow_size_offset: WindowTransform, state: WindowState) -> Result<(WindowTransform, WindowTransform), ()>  {
     let half_cx = screen_size.x / 2;
     let half_cy = screen_size.y / 2;
 
+    let (mut pos_x, mut pos_y) = (0, 0);
+    let (mut size_x, mut size_y) = (0, 0);
+
     match state {
-        WindowState::Left => Ok((WindowTransform::new(0, 0), WindowTransform::new(half_cx, screen_size.y))),
-        WindowState::Right => Ok((WindowTransform::new(half_cx, 0), WindowTransform::new(half_cx, screen_size.y))),
-        WindowState::Top => Ok((WindowTransform::new(0, 0), WindowTransform::new(screen_size.x, half_cy))),
-        WindowState::Bottom => Ok((WindowTransform::new(0, half_cy), WindowTransform::new(screen_size.x, half_cy))),
-        WindowState::Full => Ok((WindowTransform::new(0, 0), WindowTransform::new(screen_size.x, screen_size.y))),
-        WindowState::None => Err(()),
+        WindowState::Left => { pos_x = shadow_pos_offset.x; pos_y = shadow_pos_offset.y; size_x = half_cx + shadow_size_offset.x; size_y = screen_size.y + shadow_size_offset.y; },
+        WindowState::Right => { pos_x = half_cx + shadow_pos_offset.x; pos_y = shadow_pos_offset.y; size_x = half_cx + shadow_size_offset.x; size_y = screen_size.y + shadow_size_offset.y; },
+        WindowState::Top => { pos_x = shadow_pos_offset.x; pos_y = shadow_pos_offset.y; size_x = screen_size.x + shadow_size_offset.x; size_y = half_cy + shadow_size_offset.y; },
+        WindowState::Bottom => { pos_x = shadow_pos_offset.x; pos_y = half_cy + shadow_pos_offset.y; size_x = screen_size.x + shadow_size_offset.x; size_y = half_cy + shadow_size_offset.y; },
+        WindowState::Full => { pos_x = shadow_pos_offset.x; pos_y = shadow_pos_offset.y; size_x = screen_size.x + shadow_size_offset.x; size_y = screen_size.y + shadow_size_offset.y; },
+        WindowState::None => { return Err(()); }
     }
+
+    Ok((WindowTransform::new(pos_x, pos_y), WindowTransform::new(size_x, size_y)))
 }
 
 unsafe fn get_screen_size(window: &mut HWND) -> Result<WindowTransform, ()> {
