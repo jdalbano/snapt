@@ -6,6 +6,7 @@ use crate::window::window_transform::*;
 type HWND = winapi::shared::windef::HWND__;
 type RECT = winapi::shared::windef::RECT;
 type MONTIORINFO = winapi::um::winuser::MONITORINFO;
+type LPVOID = winapi::shared::minwindef::LPVOID;
 
 pub enum WindowState {
     None,
@@ -37,12 +38,25 @@ pub fn process_window_state_change(state: WindowState) {
 
     unsafe{                
         let window = winapi::um::winuser::GetForegroundWindow();
-        let rect = &mut RECT { left: 0, right:0, top: 0, bottom: 0 } as *mut RECT;
+
+        let window_rect = &mut RECT { left: 0, right:0, top: 0, bottom: 0 } as *mut RECT;
+        let did_window_rect_succeed = winapi::um::winuser::GetWindowRect(window, window_rect);
+
+        let shadow_rect = &mut RECT { left: 0, right:0, top: 0, bottom: 0 } as *mut RECT;
+        let shadow_rect_result = winapi::um::dwmapi::DwmGetWindowAttribute(
+            window,
+            winapi::um::dwmapi::DWMWA_EXTENDED_FRAME_BOUNDS, 
+            shadow_rect as LPVOID, 
+            size_of::<RECT>() as u32);
     
-        let did_succeed = winapi::um::winuser::GetWindowRect(window, rect);
-    
-        if did_succeed != 0 {
-            let pos_i = WindowTransform::new((*rect).left, (*rect).top);
+        if did_window_rect_succeed != 0 && shadow_rect_result == 0 {
+
+            print!("window left = {}, right = {}, top = {}, bottom = {}\n", (*window_rect).left, (*window_rect).right, (*window_rect).top, (*window_rect).bottom);
+            print!("shadow left = {}, right = {}, top = {}, bottom = {}\n\n", (*shadow_rect).left, (*shadow_rect).right, (*shadow_rect).top, (*shadow_rect).bottom);
+
+            
+
+            let pos_i = WindowTransform::new((*window_rect).left, (*window_rect).top);
 
             let size_result = get_screen_size(&mut *window);
 
@@ -50,6 +64,8 @@ pub fn process_window_state_change(state: WindowState) {
                 let transform_result = get_transform_for_window_state(&size_i, state);
                 
                 if let Ok((pos_f, size_f)) = transform_result {
+                    // let pos_f_adjusted = WindowTransform::new(pos_f.x - shadow_buffer.x, pos_f.y - shadow_buffer.y);
+                    // let size_f_adjusted = WindowTransform::new(size_f.x + shadow_buffer.x * 2, size_f.y + shadow_buffer.y * 2);
                     change_window_to_state(&mut *window, pos_i, size_i, pos_f, size_f);
                 }
             }

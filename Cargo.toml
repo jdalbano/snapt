@@ -7,4 +7,4 @@ edition = "2018"
 
 [dependencies]
 device_query = "0.2.8"
-winapi = { version = "0.3.9", features = ["winuser", "errhandlingapi"] }
+winapi = { version = "0.3.9", features = ["winuser", "errhandlingapi", "dwmapi"] }
