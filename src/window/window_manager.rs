@@ -26,11 +26,9 @@ pub fn process_window_state_change(state: WindowState) {
 }
 
 unsafe fn check_if_window_can_be_resized(window: &mut HWND) -> bool {
-    // let window_style = winapi::um::winuser::GetWindowLongA(window, winapi::um::winuser::GWL_STYLE);
+    let window_style = winapi::um::winuser::GetWindowLongA(window, winapi::um::winuser::GWL_STYLE);
     
-    // window_style == 
-
-    true
+    (window_style & winapi::um::winuser::WS_MAXIMIZEBOX as i32) != 0
 }
 
 unsafe fn change_window_state(window: &mut HWND, state: WindowState) {
