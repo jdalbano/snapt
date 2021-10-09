@@ -1,3 +1,4 @@
+use std::mem::size_of;
 use winapi;
 
 use crate::window::window_transform::*;
@@ -5,7 +6,6 @@ use crate::window::window_transform::*;
 type HWND = winapi::shared::windef::HWND__;
 type RECT = winapi::shared::windef::RECT;
 type MONTIORINFO = winapi::um::winuser::MONITORINFO;
-type HMONITOR = winapi::shared::windef::HMONITOR;
 
 pub enum WindowState {
     None,
@@ -78,36 +78,26 @@ fn get_transform_for_window_state(screen_size: &WindowTransform, state: WindowSt
 }
 
 unsafe fn get_screen_size(window: &mut HWND) -> Result<WindowTransform, ()> {
-    //let monitor_info_result = get_current_monitor_info(window);
+    let monitor_info_result = get_current_monitor_info(window);
 
-   //if let Ok(monitor_info) = monitor_info_result {
-        //monitor_info.
-        let display = winapi::um::winuser::GetDesktopWindow();
-        let rect = &mut RECT { left: 0, right:0, top: 0, bottom: 0 } as *mut RECT;
-    
-        let did_rect_succeed = winapi::um::winuser::GetWindowRect(display, rect);
-    
-        if did_rect_succeed != 0 {
-            Ok(WindowTransform::new((*rect).right - (*rect).left, (*rect).bottom - (*rect).top))
-        }
-        else {
-            Err(())
-        }
-    // }
-    // else {
-    //     Err(())
-    // }
+   if let Ok(monitor_info) = monitor_info_result {
+        let work_area: RECT = monitor_info.rcWork;
+        Ok(WindowTransform::new(work_area.right - work_area.left, work_area.bottom - work_area.top))
+    }
+    else {
+        Err(())
+    }
 }
 
 unsafe fn get_current_monitor_info(window: &mut HWND) -> Result<MONTIORINFO, ()> {
     let monitor = winapi::um::winuser::MonitorFromWindow(window, winapi::um::winuser::MONITOR_DEFAULTTONEAREST);
 
     let monitor_info = &mut MONTIORINFO {
-        cbSize: 0,
+        cbSize: size_of::<MONTIORINFO>() as u32,
         rcMonitor: RECT { left: 0, right:0, top: 0, bottom: 0 },
         rcWork: RECT { left: 0, right:0, top: 0, bottom: 0 },
         dwFlags: 0,
-    };
+    } as *mut MONTIORINFO;
 
     let did_monitor_info_succeed = winapi::um::winuser::GetMonitorInfoA(monitor, monitor_info);
 
