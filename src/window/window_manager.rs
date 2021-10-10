@@ -32,8 +32,6 @@ unsafe fn check_if_window_can_be_resized(window: &mut HWND) -> bool {
 }
 
 unsafe fn change_window_state(window: &mut HWND, state: WindowState) {
-    restore_window(window);
-
     let (did_window_bounds_succeed, window_bounds) = get_window_bounds(window);
     let (did_shadow_bounds_succeed, shadow_bounds) = get_shadow_bounds(window);
 
@@ -42,6 +40,8 @@ unsafe fn change_window_state(window: &mut HWND, state: WindowState) {
 
         if let Ok(screen_size) = screen_size_result {
             let (shadow_pos_offset, shadow_size_offset) = get_shadow_offsets(window_bounds, shadow_bounds);
+
+            restore_window(window);
             
             let pos_i = WindowTransform::new(window_bounds.left, window_bounds.top);
             let size_i = WindowTransform::new(window_bounds.right + shadow_size_offset.x, window_bounds.bottom + shadow_size_offset.y);
@@ -62,8 +62,6 @@ unsafe fn restore_window(window: &mut HWND) {
 unsafe fn get_window_bounds(window: &mut HWND) -> (bool, RECT) {
     let window_rect = &mut RECT { left: 0, right:0, top: 0, bottom: 0 } as *mut RECT;
     let window_rect_result = winapi::um::winuser::GetWindowRect(window, window_rect);
-
-    print!("left = {}, top = {}, right = {}, bottom = {}\n\n", (*window_rect).left, (*window_rect).top, (*window_rect).right, (*window_rect).bottom);
 
     (window_rect_result != 0, *window_rect)
 }
@@ -140,9 +138,6 @@ unsafe fn get_current_monitor_info(window: &mut HWND) -> Result<MONTIORINFO, ()>
 }
 
 unsafe fn set_window_pos_and_size(window: &mut HWND, pos_i: WindowTransform, size_i: WindowTransform, pos_f: WindowTransform, size_f: WindowTransform) {
-    print!(
-        "pos_i.x = {}, pos_f.x = {}\npos_i.y = {}, pos_f.y = {}\nsize_i.x = {}, size_f.x = {}\nsize_i.y = {} size_f.y = {}\n\n",
-        pos_i.x, pos_f.x, pos_i.y, pos_f.y, size_i.x, size_f.x, size_i.y, size_f.y);
     if pos_i.x != pos_f.x || pos_i.y != pos_f.y || size_i.x != size_f.x || size_i.y != size_f.y {                
         winapi::um::winuser::SetWindowPos(window, winapi::um::winuser::HWND_TOP, pos_f.x, pos_f.y, size_f.x, size_f.y, winapi::um::winuser::SWP_SHOWWINDOW);
     }
