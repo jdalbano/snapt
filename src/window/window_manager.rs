@@ -36,9 +36,9 @@ unsafe fn change_window_state(window: &mut HWND, state: WindowState) {
     let (did_shadow_bounds_succeed, shadow_bounds) = get_shadow_bounds(window);
 
     if did_window_bounds_succeed && did_shadow_bounds_succeed {
-        let screen_size_result = get_screen_size(window);
+        let screen_transform_result = get_screen_transforms(window);
 
-        if let Ok(screen_size) = screen_size_result {
+        if let Ok((screen_pos, screen_size)) = screen_transform_result {
             let (shadow_pos_offset, shadow_size_offset) = get_shadow_offsets(window_bounds, shadow_bounds);
 
             restore_window(window);
@@ -46,7 +46,7 @@ unsafe fn change_window_state(window: &mut HWND, state: WindowState) {
             let pos_i = WindowTransform::new(window_bounds.left, window_bounds.top);
             let size_i = WindowTransform::new(window_bounds.right + shadow_size_offset.x, window_bounds.bottom + shadow_size_offset.y);
             
-            let transform_result = get_transform_for_window_state(&screen_size, shadow_pos_offset, shadow_size_offset, state);
+            let transform_result = get_transform_for_window_state(screen_pos, screen_size, shadow_pos_offset, shadow_size_offset, state);
             
             if let Ok((pos_f, size_f)) = transform_result {
                 set_window_pos_and_size(window, pos_i, size_i, pos_f, size_f);
@@ -83,17 +83,37 @@ fn get_shadow_offsets(window_rect: RECT, shadow_rect: RECT) -> (WindowTransform,
     (shadow_pos_offset, shadow_size_offset)
 }
 
-fn get_transform_for_window_state(screen_size: &WindowTransform, shadow_pos_offset: WindowTransform, shadow_size_offset: WindowTransform, state: WindowState) -> Result<(WindowTransform, WindowTransform), ()>  {
+fn get_transform_for_window_state(screen_pos: WindowTransform, screen_size: WindowTransform, shadow_pos_offset: WindowTransform, shadow_size_offset: WindowTransform, state: WindowState) -> Result<(WindowTransform, WindowTransform), ()>  {
     let half_cx = screen_size.x / 2;
     let half_cy = screen_size.y / 2;
 
     let state_result =
         match state {
-            WindowState::Left => Some((shadow_pos_offset.x, shadow_pos_offset.y, half_cx + shadow_size_offset.x, screen_size.y + shadow_size_offset.y)),
-            WindowState::Right => Some((half_cx + shadow_pos_offset.x, shadow_pos_offset.y, half_cx + shadow_size_offset.x, screen_size.y + shadow_size_offset.y)),
-            WindowState::Top => Some((shadow_pos_offset.x, shadow_pos_offset.y, screen_size.x + shadow_size_offset.x, half_cy + shadow_size_offset.y)),
-            WindowState::Bottom => Some((shadow_pos_offset.x, half_cy + shadow_pos_offset.y, screen_size.x + shadow_size_offset.x, half_cy + shadow_size_offset.y)),
-            WindowState::Full => Some((shadow_pos_offset.x, shadow_pos_offset.y, screen_size.x + shadow_size_offset.x, screen_size.y + shadow_size_offset.y)),
+            WindowState::Left => Some((
+                screen_pos.x + shadow_pos_offset.x, 
+                screen_pos.y + shadow_pos_offset.y, 
+                half_cx + shadow_size_offset.x, 
+                screen_size.y + shadow_size_offset.y)),
+            WindowState::Right => Some((
+                screen_pos.x + half_cx + shadow_pos_offset.x, 
+                screen_pos.y + shadow_pos_offset.y, 
+                half_cx + shadow_size_offset.x, 
+                screen_size.y + shadow_size_offset.y)),
+            WindowState::Top => Some((
+                screen_pos.x + shadow_pos_offset.x, 
+                screen_pos.y + shadow_pos_offset.y, 
+                screen_size.x + shadow_size_offset.x, 
+                half_cy + shadow_size_offset.y)),
+            WindowState::Bottom => Some((
+                screen_pos.x + shadow_pos_offset.x, 
+                screen_pos.y + half_cy + shadow_pos_offset.y, 
+                screen_size.x + shadow_size_offset.x, 
+                half_cy + shadow_size_offset.y)),
+            WindowState::Full => Some((
+                screen_pos.x + shadow_pos_offset.x, 
+                screen_pos.y + shadow_pos_offset.y, 
+                screen_size.x + shadow_size_offset.x, 
+                screen_size.y + shadow_size_offset.y)),
             WindowState::None => None,
         };
     
@@ -105,12 +125,14 @@ fn get_transform_for_window_state(screen_size: &WindowTransform, shadow_pos_offs
     }
 }
 
-unsafe fn get_screen_size(window: &mut HWND) -> Result<WindowTransform, ()> {
+unsafe fn get_screen_transforms(window: &mut HWND) -> Result<(WindowTransform, WindowTransform), ()> {
     let monitor_info_result = get_current_monitor_info(window);
 
    if let Ok(monitor_info) = monitor_info_result {
         let work_area: RECT = monitor_info.rcWork;
-        Ok(WindowTransform::new(work_area.right - work_area.left, work_area.bottom - work_area.top))
+        Ok((
+            WindowTransform::new(work_area.left, work_area.top),
+            WindowTransform::new(work_area.right - work_area.left, work_area.bottom - work_area.top)))
     }
     else {
         Err(())
