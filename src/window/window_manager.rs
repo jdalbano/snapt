@@ -9,6 +9,8 @@ type RECT = winapi::shared::windef::RECT;
 type MONTIORINFO = winapi::um::winuser::MONITORINFO;
 type LPVOID = winapi::shared::minwindef::LPVOID;
 
+const CHANGE_THRESHOLD: i32 = 1;
+
 pub fn process_window_state_change(state: WindowState) {
     if let WindowState::None = state {
         return
@@ -32,6 +34,8 @@ unsafe fn check_if_window_can_be_resized(window: &mut HWND) -> bool {
 }
 
 unsafe fn change_window_state(window: &mut HWND, state: WindowState) {
+    restore_window(window);
+
     let (did_window_bounds_succeed, window_bounds) = get_window_bounds(window);
     let (did_shadow_bounds_succeed, shadow_bounds) = get_shadow_bounds(window);
 
@@ -41,10 +45,10 @@ unsafe fn change_window_state(window: &mut HWND, state: WindowState) {
         if let Ok((screen_pos, screen_size)) = screen_transform_result {
             let (shadow_pos_offset, shadow_size_offset) = get_shadow_offsets(window_bounds, shadow_bounds);
 
-            restore_window(window);
-            
             let pos_i = WindowTransform::new(window_bounds.left, window_bounds.top);
-            let size_i = WindowTransform::new(window_bounds.right - window_bounds.left + shadow_size_offset.x, window_bounds.bottom - window_bounds.top + shadow_size_offset.y);
+            let size_i = WindowTransform::new(
+                shadow_bounds.right - window_bounds.left + shadow_size_offset.x + shadow_pos_offset.x, 
+                shadow_bounds.bottom - window_bounds.top + shadow_size_offset.y + shadow_pos_offset.y);
             
             let transform_result = get_transform_for_window_state(screen_pos, screen_size, shadow_pos_offset, shadow_size_offset, state);
             
@@ -56,7 +60,7 @@ unsafe fn change_window_state(window: &mut HWND, state: WindowState) {
 }
 
 unsafe fn restore_window(window: &mut HWND) {
-    winapi::um::winuser::ShowWindow(window, winapi::um::winuser::SW_NORMAL);
+    winapi::um::winuser::ShowWindow(window, winapi::um::winuser::SW_SHOWNOACTIVATE);
 }
 
 unsafe fn get_window_bounds(window: &mut HWND) -> (bool, RECT) {
@@ -79,40 +83,51 @@ unsafe fn get_shadow_bounds(window: &mut HWND) -> (bool, RECT) {
 
 fn get_shadow_offsets(window_rect: RECT, shadow_rect: RECT) -> (WindowTransform, WindowTransform) {
     let shadow_pos_offset = WindowTransform::new(window_rect.left - shadow_rect.left, window_rect.top - shadow_rect.top);
-    let shadow_size_offset = WindowTransform::new(window_rect.right - shadow_rect.right + (-1 * shadow_pos_offset.x), window_rect.bottom - shadow_rect.bottom + (-1 * shadow_pos_offset.y));
+    let shadow_size_offset = WindowTransform::new(window_rect.right - shadow_rect.right - shadow_pos_offset.x, window_rect.bottom - shadow_rect.bottom - shadow_pos_offset.y);
     (shadow_pos_offset, shadow_size_offset)
 }
 
 fn get_transform_for_window_state(screen_pos: WindowTransform, screen_size: WindowTransform, shadow_pos_offset: WindowTransform, shadow_size_offset: WindowTransform, state: WindowState) -> Result<(WindowTransform, WindowTransform), ()>  {
+    let (mut pos_correction, mut size_correction) = (0, 0);
+
+    if screen_pos.x != 0 {
+        size_correction += 1;
+    }
+
+    if shadow_pos_offset.x != 0 {
+        pos_correction -= 1;
+        size_correction += 1;
+    }
+    
     let half_cx = screen_size.x / 2;
     let half_cy = screen_size.y / 2;
 
     let state_result =
         match state {
             WindowState::Left => Some((
-                screen_pos.x + shadow_pos_offset.x, 
+                screen_pos.x + shadow_pos_offset.x + pos_correction, 
                 screen_pos.y + shadow_pos_offset.y, 
-                half_cx + shadow_size_offset.x, 
-                screen_size.y + shadow_size_offset.y)),
+                half_cx + shadow_size_offset.x + size_correction + 1, 
+                screen_size.y + shadow_size_offset.y + size_correction)),
             WindowState::Right => Some((
                 screen_pos.x + half_cx + shadow_pos_offset.x, 
                 screen_pos.y + shadow_pos_offset.y, 
                 half_cx + shadow_size_offset.x, 
-                screen_size.y + shadow_size_offset.y)),
+                screen_size.y + shadow_size_offset.y + size_correction)),
             WindowState::Top => Some((
-                screen_pos.x + shadow_pos_offset.x, 
+                screen_pos.x + shadow_pos_offset.x + pos_correction, 
                 screen_pos.y + shadow_pos_offset.y, 
-                screen_size.x + shadow_size_offset.x, 
-                half_cy + shadow_size_offset.y)),
+                screen_size.x + shadow_size_offset.x + size_correction, 
+                half_cy + shadow_size_offset.y + size_correction)),
             WindowState::Bottom => Some((
-                screen_pos.x + shadow_pos_offset.x, 
+                screen_pos.x + shadow_pos_offset.x + pos_correction, 
                 screen_pos.y + half_cy + shadow_pos_offset.y, 
                 screen_size.x + shadow_size_offset.x, 
-                half_cy + shadow_size_offset.y)),
+                half_cy + shadow_size_offset.y + size_correction)),
             WindowState::Full => Some((
-                screen_pos.x + shadow_pos_offset.x, 
+                screen_pos.x + shadow_pos_offset.x + pos_correction, 
                 screen_pos.y + shadow_pos_offset.y, 
-                screen_size.x + shadow_size_offset.x, 
+                screen_size.x + shadow_size_offset.x + size_correction, 
                 screen_size.y + shadow_size_offset.y)),
             WindowState::None => None,
         };
@@ -160,7 +175,12 @@ unsafe fn get_current_monitor_info(window: &mut HWND) -> Result<MONTIORINFO, ()>
 }
 
 unsafe fn set_window_pos_and_size(window: &mut HWND, pos_i: WindowTransform, size_i: WindowTransform, pos_f: WindowTransform, size_f: WindowTransform) {
-    if pos_i.x != pos_f.x || pos_i.y != pos_f.y || size_i.x != size_f.x || size_i.y != size_f.y {
+    let has_pos_x_changed = (pos_i.x - pos_f.x).abs() > CHANGE_THRESHOLD;
+    let has_pos_y_changed = (pos_i.y - pos_f.y).abs() > CHANGE_THRESHOLD;
+    let has_size_x_changed = (size_i.x - size_f.x).abs() > CHANGE_THRESHOLD;
+    let has_size_y_changed = (size_i.y - size_f.y).abs() > CHANGE_THRESHOLD;
+
+    if has_pos_x_changed || has_pos_y_changed || has_size_x_changed || has_size_y_changed {
         winapi::um::winuser::SetWindowPos(window, winapi::um::winuser::HWND_TOP, pos_f.x, pos_f.y, size_f.x, size_f.y, winapi::um::winuser::SWP_SHOWWINDOW);
     }
 }
