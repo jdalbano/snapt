@@ -44,7 +44,7 @@ unsafe fn change_window_state(window: &mut HWND, state: WindowState) {
             restore_window(window);
             
             let pos_i = WindowTransform::new(window_bounds.left, window_bounds.top);
-            let size_i = WindowTransform::new(window_bounds.right + shadow_size_offset.x, window_bounds.bottom + shadow_size_offset.y);
+            let size_i = WindowTransform::new(window_bounds.right - window_bounds.left + shadow_size_offset.x, window_bounds.bottom - window_bounds.top + shadow_size_offset.y);
             
             let transform_result = get_transform_for_window_state(screen_pos, screen_size, shadow_pos_offset, shadow_size_offset, state);
             
@@ -160,7 +160,7 @@ unsafe fn get_current_monitor_info(window: &mut HWND) -> Result<MONTIORINFO, ()>
 }
 
 unsafe fn set_window_pos_and_size(window: &mut HWND, pos_i: WindowTransform, size_i: WindowTransform, pos_f: WindowTransform, size_f: WindowTransform) {
-    if pos_i.x != pos_f.x || pos_i.y != pos_f.y || size_i.x != size_f.x || size_i.y != size_f.y {                
+    if pos_i.x != pos_f.x || pos_i.y != pos_f.y || size_i.x != size_f.x || size_i.y != size_f.y {
         winapi::um::winuser::SetWindowPos(window, winapi::um::winuser::HWND_TOP, pos_f.x, pos_f.y, size_f.x, size_f.y, winapi::um::winuser::SWP_SHOWWINDOW);
     }
 }
