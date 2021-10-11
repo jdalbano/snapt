@@ -12,10 +12,6 @@ type LPVOID = winapi::shared::minwindef::LPVOID;
 const CHANGE_THRESHOLD: i32 = 1;
 
 pub fn process_window_state_change(state: WindowState) {
-    if let WindowState::None = state {
-        return
-    }
-
     unsafe{                
         let window = winapi::um::winuser::GetForegroundWindow();
 
@@ -130,7 +126,6 @@ fn get_transform_for_window_state(screen_pos: WindowTransform, screen_size: Wind
                 screen_pos.y + shadow_pos_offset.y, 
                 screen_size.x + shadow_size_offset.x + size_correction_x, 
                 screen_size.y + shadow_size_offset.y + size_correction_y)),
-            WindowState::None => None,
         };
     
     if let Some((pos_x, pos_y, size_x, size_y)) = state_result {
