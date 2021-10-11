@@ -88,15 +88,16 @@ fn get_shadow_offsets(window_rect: RECT, shadow_rect: RECT) -> (WindowTransform,
 }
 
 fn get_transform_for_window_state(screen_pos: WindowTransform, screen_size: WindowTransform, shadow_pos_offset: WindowTransform, shadow_size_offset: WindowTransform, state: WindowState) -> Result<(WindowTransform, WindowTransform), ()>  {
-    let (mut pos_correction, mut size_correction) = (0, 0);
+    let (mut pos_correction, mut size_correction_x, mut size_correction_y) = (0, 0, 0);
 
     if screen_pos.x != 0 {
-        size_correction += 1;
+        size_correction_x += 1;
     }
 
     if shadow_pos_offset.x != 0 {
         pos_correction -= 1;
-        size_correction += 1;
+        size_correction_x += 2;
+        size_correction_y += 2;
     }
     
     let half_cx = screen_size.x / 2;
@@ -107,28 +108,28 @@ fn get_transform_for_window_state(screen_pos: WindowTransform, screen_size: Wind
             WindowState::Left => Some((
                 screen_pos.x + shadow_pos_offset.x + pos_correction, 
                 screen_pos.y + shadow_pos_offset.y, 
-                half_cx + shadow_size_offset.x + size_correction + 1, 
-                screen_size.y + shadow_size_offset.y + size_correction)),
+                half_cx + shadow_size_offset.x + size_correction_x + 1, 
+                screen_size.y + shadow_size_offset.y + size_correction_y)),
             WindowState::Right => Some((
                 screen_pos.x + half_cx + shadow_pos_offset.x, 
                 screen_pos.y + shadow_pos_offset.y, 
-                half_cx + shadow_size_offset.x, 
-                screen_size.y + shadow_size_offset.y + size_correction)),
+                half_cx + shadow_size_offset.x + size_correction_x, 
+                screen_size.y + shadow_size_offset.y + size_correction_y)),
             WindowState::Top => Some((
                 screen_pos.x + shadow_pos_offset.x + pos_correction, 
                 screen_pos.y + shadow_pos_offset.y, 
-                screen_size.x + shadow_size_offset.x + size_correction, 
-                half_cy + shadow_size_offset.y + size_correction)),
+                screen_size.x + shadow_size_offset.x + size_correction_x, 
+                half_cy + shadow_size_offset.y + size_correction_y)),
             WindowState::Bottom => Some((
                 screen_pos.x + shadow_pos_offset.x + pos_correction, 
                 screen_pos.y + half_cy + shadow_pos_offset.y, 
-                screen_size.x + shadow_size_offset.x, 
-                half_cy + shadow_size_offset.y + size_correction)),
+                screen_size.x + shadow_size_offset.x + size_correction_x, 
+                half_cy + shadow_size_offset.y + size_correction_y)),
             WindowState::Full => Some((
                 screen_pos.x + shadow_pos_offset.x + pos_correction, 
                 screen_pos.y + shadow_pos_offset.y, 
-                screen_size.x + shadow_size_offset.x + size_correction, 
-                screen_size.y + shadow_size_offset.y)),
+                screen_size.x + shadow_size_offset.x + size_correction_x, 
+                screen_size.y + shadow_size_offset.y + size_correction_y)),
             WindowState::None => None,
         };
     
