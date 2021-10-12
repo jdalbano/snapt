@@ -46,7 +46,7 @@ unsafe fn change_window_dock_position(window: &mut HWND, dock_position: DockPosi
             let final_transform_result = get_transform_for_dock_position(dock_position, screen_transform, shadow_offset_transform);
             
             if let Ok(final_transform) = final_transform_result {
-                set_window_pos_and_size(window, initial_transform, final_transform);
+                set_window_transform(window, initial_transform, final_transform);
             }
         }
     }
@@ -181,7 +181,7 @@ unsafe fn get_current_monitor_info(window: &mut HWND) -> Result<MONTIORINFO, ()>
     }
 }
 
-unsafe fn set_window_pos_and_size(window: &mut HWND, initial_transform: WindowTransform, final_transform: WindowTransform) {
+unsafe fn set_window_transform(window: &mut HWND, initial_transform: WindowTransform, final_transform: WindowTransform) {
     let has_pos_x_changed = (initial_transform.pos_x - final_transform.pos_x).abs() > CHANGE_THRESHOLD;
     let has_pos_y_changed = (initial_transform.pos_y - final_transform.pos_y).abs() > CHANGE_THRESHOLD;
     let has_size_x_changed = (initial_transform.size_x - final_transform.size_x).abs() > CHANGE_THRESHOLD;
