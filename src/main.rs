@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use device_query::{DeviceQuery, DeviceState, Keycode};
 
 pub mod hotkeys;
