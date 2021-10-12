@@ -1,25 +1,25 @@
-mod window_manager;
-mod window_state;
+mod dock_manager;
+mod dock_position;
 mod window_transform;
 
-use window_state::*;
+use dock_position::*;
 
 pub fn dock_left() {
-    window_manager::process_window_state_change(WindowState::Left);
+    dock_manager::process_window_dock_change(DockPosition::Left);
 }
 
 pub fn dock_right(){
-    window_manager::process_window_state_change(WindowState::Right);
+    dock_manager::process_window_dock_change(DockPosition::Right);
 }
 
 pub fn dock_top(){
-    window_manager::process_window_state_change(WindowState::Top);
+    dock_manager::process_window_dock_change(DockPosition::Top);
 }
 
 pub fn dock_bottom(){
-    window_manager::process_window_state_change(WindowState::Bottom);
+    dock_manager::process_window_dock_change(DockPosition::Bottom);
 }
 
 pub fn dock_full(){
-    window_manager::process_window_state_change(WindowState::Full);
+    dock_manager::process_window_dock_change(DockPosition::Full);
 }
