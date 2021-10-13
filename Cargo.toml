@@ -3,7 +3,6 @@ name = "snapt"
 version = "0.1.0"
 edition = "2018"
 authors = ["Joseph DAlbano <jdalbano.dev@gmail.com>"]
-license-file = "eula.rtf"
 description = "Snapt is a window management app for Windows operating system. It primarily allows docking configuration enabled by hotkey combinations."
 readme = "README.md"
 homepage = "https://github.com/jdalbano/snapt"

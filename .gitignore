@@ -403,4 +403,5 @@ FodyWeavers.xsd
 # JetBrains Rider
 .idea/
 *.sln.iml
+
 wix/main.wxs
