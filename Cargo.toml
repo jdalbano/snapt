@@ -8,8 +8,11 @@ description = "Snapt is a window management app for Windows operating system. It
 readme = "README.md"
 homepage = "https://github.com/jdalbano/snapt"
 repository = "https://github.com/jdalbano/snapt"
-
+build = "build.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+embed-resource = "1.4"
 
 [dependencies]
 device_query = "0.2.8"
