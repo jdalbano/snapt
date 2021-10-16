@@ -1,1 +1,13 @@
-main_icon ICON "resources\\test.ico"
+#include "resources.h"
+
+MAIN_ICON ICON "resources\\test.ico"
+
+IDC_CONTEXTMENU MENU
+BEGIN
+    POPUP ""
+	BEGIN
+	MENUITEM "&Pause", IDM_PAUSE
+	MENUITEM SEPARATOR
+	MENUITEM "E&xit", IDM_EXIT
+	END
+END

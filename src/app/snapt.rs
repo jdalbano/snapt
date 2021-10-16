@@ -9,17 +9,17 @@ use crate::hotkeys;
 pub const APP_NAME: &str = "Snapt";
 
 pub struct Snapt {
-    do_pause: bool,
+    pub do_pause: bool,
 }
 
 impl Snapt {
     pub fn new() -> Snapt {
         Snapt { 
-            do_pause: false, 
+            do_pause: true, 
         }
     }
 
-    pub fn run(&self) {
+    pub fn run(&mut self) {
         let interface_result = self.start_app_interface();
 
         if let Ok(mut interface) = interface_result {
@@ -35,7 +35,7 @@ impl Snapt {
         self.start_monitoring_keys();
 
         loop {
-            let was_message_handled = self.handle_interface_message(&interface);
+            let was_message_handled = self.handle_interface_messages(&interface);
 
             if !was_message_handled {
                 break;
@@ -58,9 +58,9 @@ impl Snapt {
         });
     }
 
-    fn start_app_interface(&self) -> Result<AppInterface, Error> {
+    fn start_app_interface(&mut self) -> Result<AppInterface, Error> {
         unsafe {
-            app_interface::create_app_interface()
+            app_interface::create_app_interface(self as *mut Snapt)
         }
     }
 
@@ -70,9 +70,9 @@ impl Snapt {
         }
     }
 
-    fn handle_interface_message(&self, instance: &AppInterface) -> bool {
+    fn handle_interface_messages(&self, instance: &AppInterface) -> bool {
         unsafe {
-            app_interface::handle_message(instance.window)
+            app_interface::handle_messages(instance.window)
         }
     }
 

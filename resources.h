@@ -1,0 +1,3 @@
+#define IDC_CONTEXTMENU 201
+#define IDM_PAUSE 121
+#define IDM_EXIT 122
