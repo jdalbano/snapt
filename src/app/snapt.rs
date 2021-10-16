@@ -10,14 +10,12 @@ pub const APP_NAME: &str = "Snapt";
 
 pub struct Snapt {
     do_pause: bool,
-    do_exit: bool,
 }
 
 impl Snapt {
     pub fn new() -> Snapt {
         Snapt { 
             do_pause: false, 
-            do_exit: false,
         }
     }
 
@@ -34,32 +32,31 @@ impl Snapt {
     }
 
     fn main_loop(&self, instance: AppInstance) {
-        let device_state = DeviceState::new();
-    
-        let hotkey_profile = &hotkeys::hotkey_loader::load_hotkey_profile();
-        
+        self.start_monitoring_keys();
 
         loop {
-            print!("{:?}\n\n", instance.window);
             let was_message_handled = self.handle_instance_message(&instance);
-            print!("\n{} message was handled!!!!! \n\n", was_message_handled);
 
             if !was_message_handled {
                 break;
             }
-
-            if !self.do_pause {
-                let keys: Vec<Keycode> = device_state.get_keys();
-
-                print!("{:?}\n\n", keys);
-
-                let _did_process = hotkey_profile.process_incoming_keys(&keys);
-            }
-
-            if self.do_exit {
-                break;
-            }
         }
+    }
+
+    fn start_monitoring_keys(&self) {
+
+        std::thread::spawn(|| {
+            let do_pause = false;
+            let device_state = DeviceState::new();
+            let hotkey_profile = &hotkeys::hotkey_loader::load_hotkey_profile();
+            
+            loop {    
+                if !(&do_pause) {
+                    let keys: Vec<Keycode> = device_state.get_keys();
+                    let _did_process = hotkey_profile.process_incoming_keys(&keys);   
+                } 
+            }
+        });
     }
 
     fn start_app_instance(&self) -> Result<AppInstance, Error> {
@@ -92,10 +89,6 @@ impl Snapt {
 
     fn resume_main_loop(&mut self) {
         self.do_pause = false;
-    }
-
-    fn exit_main_loop(&mut self) {
-        self.do_exit = true;
     }
 }
 

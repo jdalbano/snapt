@@ -49,18 +49,18 @@ pub unsafe fn remove_notification(notification: &mut shellapi::NOTIFYICONDATAW) 
 }
 
 pub unsafe fn handle_message(window: windef::HWND) -> bool {
-    print!("did this 1\n");
+ 
     // let mut message: mem::MaybeUninit<winuser::MSG> = mem::MaybeUninit::uninit();
     let mut message : winuser::MSG = mem::uninitialized();
-    print!("did this 2\n");
+
 
     if winuser::GetMessageW( &mut message as *mut winuser::MSG, window, 0, 0 ) > 0 {
-        print!("did this 3\n");
+     
 
         winuser::TranslateMessage( &message as *const winuser::MSG ); // Translate message into something meaningful with TranslateMessage
-        print!("did this 4\n");
+    
         winuser::DispatchMessageW( &message as *const winuser::MSG ); // Dispatch message with DispatchMessageW
-        print!("did this 5\n");
+      
 
         // winuser::TranslateMessage(message.as_mut_ptr() as *const winuser::MSG);
         // print!("\n{:?}", (*(message.as_mut_ptr() as *mut winuser::MSG)).message);
