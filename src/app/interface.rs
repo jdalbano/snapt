@@ -12,7 +12,7 @@ use crate::app::resources;
 use crate::app::snapt;
 use crate::app::snapt::Snapt;
 
-const CLASS_NAME: &str = "window";
+const CLASS_NAME: &str = "interface";
 const NOTIFICATION_ID: u32 = 3434773434;
 const NOTIFICATION_CALLBACK: u32 = winuser::WM_APP + 1;
 const WM_COMMAND: u32 = winuser::WM_COMMAND as u32;
