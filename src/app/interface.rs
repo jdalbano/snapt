@@ -14,12 +14,12 @@ const CLASS_NAME: &str = "window";
 const NOTIFICATION_ID: u32 = 3434773434;
 const NOTIFICATION_CALLBACK: u32 = winuser::WM_APP + 1;
 
-pub struct Instance {
+pub struct Interface {
     pub window: windef::HWND,
     pub notification: shellapi::NOTIFYICONDATAW,
 }
 
-pub unsafe fn create_app_instance() -> Result<Instance, Error> {
+pub unsafe fn create_app_interface() -> Result<Interface, Error> {
     let class_name = OsStr::new(CLASS_NAME).encode_wide().chain(Some(0).into_iter()).collect::<Vec<u16>>();
     let app_name = OsStr::new(snapt::APP_NAME).encode_wide().chain(Some(0).into_iter()).collect::<Vec<u16>>();
 
@@ -34,12 +34,13 @@ pub unsafe fn create_app_instance() -> Result<Instance, Error> {
     if window.is_null() {
         Err( Error::last_os_error() )
     } else {
-        Ok( Instance { window, notification } )
+        Ok( Interface { window, notification } )
     }
 }
 
 pub unsafe fn add_notification(notification: &mut shellapi::NOTIFYICONDATAW) {
     shellapi::Shell_NotifyIconW(shellapi::NIM_ADD, notification);
+    shellapi::Shell_NotifyIconW(shellapi::NIM_SETVERSION, notification);
 }
 
 pub unsafe fn remove_notification(notification: &mut shellapi::NOTIFYICONDATAW) {
@@ -59,12 +60,25 @@ pub unsafe fn handle_message(window: windef::HWND) -> bool {
 }
 
 unsafe extern "system" fn wnd_proc(hwnd: windef::HWND, msg: u32, wparam: minwindef::WPARAM, lparam: minwindef::LPARAM) -> minwindef::LRESULT {
-  
+    match msg {
+        NOTIFICATION_CALLBACK => {
+            match minwindef::LOWORD(lparam as u32) as u32 {
+                winuser::WM_CONTEXTMENU => handle_wnd_proc_notification_context_menu(hwnd, msg, wparam, lparam),
+                _ => handle_wnd_proc_default(hwnd, msg, wparam, lparam)
+            }
+        }
+        _ => handle_wnd_proc_default(hwnd, msg, wparam, lparam)
+    }
+}
+
+unsafe fn handle_wnd_proc_notification_context_menu(hwnd: windef::HWND, msg: u32, wparam: minwindef::WPARAM, lparam: minwindef::LPARAM) -> minwindef::LRESULT  {
+    print!("right click on notification!!!");
+    0
+}
+
+unsafe fn handle_wnd_proc_default(hwnd: windef::HWND, msg: u32, wparam: minwindef::WPARAM, lparam: minwindef::LPARAM) -> minwindef::LRESULT {
     let result = winuser::DefWindowProcW(hwnd, msg, wparam, lparam);
-
-    print!("\nreceived message: {:?} \n\n", result);
-
-    return result;
+    result
 }
 
 unsafe fn get_wnd_class(class_name: &Vec<u16>, module: minwindef::HMODULE) -> winuser::WNDCLASSW {
@@ -104,7 +118,7 @@ unsafe fn get_notification(app_name: Vec<u16>, window: windef::HWND, module: min
     
     let ico_resource: Vec<u16> = OsStr::new("main_icon").encode_wide().chain(Some(0).into_iter()).collect();
 
-    shellapi::NOTIFYICONDATAW {
+    let mut notification = shellapi::NOTIFYICONDATAW {
         cbSize: mem::size_of::<shellapi::NOTIFYICONDATAW>() as u32,
         hWnd: window,
         uID: NOTIFICATION_ID,
@@ -113,5 +127,10 @@ unsafe fn get_notification(app_name: Vec<u16>, window: windef::HWND, module: min
         szTip: tooltip_sz,
         uFlags: shellapi::NIF_MESSAGE | shellapi::NIF_ICON | shellapi::NIF_TIP,
         ..Default::default()
-    }
+    };
+
+    let u_version = notification.u.uVersion_mut();
+    *u_version = shellapi::NOTIFYICON_VERSION_4;
+
+    notification
 }

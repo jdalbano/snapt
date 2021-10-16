@@ -1,4 +1,4 @@
-mod instance;
+mod interface;
 mod snapt;
 
 pub fn run() {
