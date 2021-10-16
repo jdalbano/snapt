@@ -94,46 +94,38 @@ fn get_shadow_offsets(window_rect: RECT, shadow_rect: RECT) -> WindowTransform {
 }
 
 fn get_transform_for_dock_position(dock_position: DockPosition, screen_transform: WindowTransform, shadow_offset_transform: WindowTransform) -> Result<WindowTransform, ()>  {
-    let (mut pos_correction, mut size_correction_x, mut size_correction_y) = (0, 0, 0);
-
-    let has_shadow_offset = shadow_offset_transform.pos_x != 0;
-
-    if has_shadow_offset {
-        pos_correction -= 1;
-        size_correction_x += 1;
-        size_correction_y += 1;
-    }
+    let transform_correction = get_window_transform_corrections(shadow_offset_transform.pos_x != 0);
     
-    let half_cx = screen_transform.size_x / 2;
-    let half_cy = screen_transform.size_y / 2;
+    let half_size_x = screen_transform.size_x / 2;
+    let half_size_y = screen_transform.size_y / 2;
 
     let dock_position_result =
         match dock_position {
             DockPosition::Left => Some((
-                screen_transform.pos_x + shadow_offset_transform.pos_x + pos_correction, 
+                screen_transform.pos_x + shadow_offset_transform.pos_x + transform_correction.pos_x, 
                 screen_transform.pos_y + shadow_offset_transform.pos_y, 
-                half_cx + shadow_offset_transform.size_x + size_correction_x * 2, 
-                screen_transform.size_y + shadow_offset_transform.size_y + size_correction_y)),
+                half_size_x + shadow_offset_transform.size_x + transform_correction.size_x * 2, 
+                screen_transform.size_y + shadow_offset_transform.size_y + transform_correction.size_y)),
             DockPosition::Right => Some((
-                screen_transform.pos_x + half_cx + shadow_offset_transform.pos_x, 
+                screen_transform.pos_x + half_size_x + shadow_offset_transform.pos_x, 
                 screen_transform.pos_y + shadow_offset_transform.pos_y, 
-                half_cx + shadow_offset_transform.size_x + size_correction_x, 
-                screen_transform.size_y + shadow_offset_transform.size_y + size_correction_y)),
+                half_size_x + shadow_offset_transform.size_x + transform_correction.size_x, 
+                screen_transform.size_y + shadow_offset_transform.size_y + transform_correction.size_y)),
             DockPosition::Top => Some((
-                screen_transform.pos_x + shadow_offset_transform.pos_x + pos_correction, 
+                screen_transform.pos_x + shadow_offset_transform.pos_x + transform_correction.pos_x, 
                 screen_transform.pos_y + shadow_offset_transform.pos_y, 
-                screen_transform.size_x + shadow_offset_transform.size_x + size_correction_x * 2, 
-                half_cy + shadow_offset_transform.size_y + size_correction_y)),
+                screen_transform.size_x + shadow_offset_transform.size_x + transform_correction.size_x * 2, 
+                half_size_y + shadow_offset_transform.size_y + transform_correction.size_y)),
             DockPosition::Bottom => Some((
-                screen_transform.pos_x + shadow_offset_transform.pos_x + pos_correction, 
-                screen_transform.pos_y + half_cy + shadow_offset_transform.pos_y, 
-                screen_transform.size_x + shadow_offset_transform.size_x + size_correction_x * 2, 
-                half_cy + shadow_offset_transform.size_y + size_correction_y)),
+                screen_transform.pos_x + shadow_offset_transform.pos_x + transform_correction.pos_x, 
+                screen_transform.pos_y + half_size_y + shadow_offset_transform.pos_y, 
+                screen_transform.size_x + shadow_offset_transform.size_x + transform_correction.size_x * 2, 
+                half_size_y + shadow_offset_transform.size_y + transform_correction.size_y)),
             DockPosition::Full => Some((
-                screen_transform.pos_x + shadow_offset_transform.pos_x + pos_correction, 
+                screen_transform.pos_x + shadow_offset_transform.pos_x + transform_correction.pos_x, 
                 screen_transform.pos_y + shadow_offset_transform.pos_y, 
-                screen_transform.size_x + shadow_offset_transform.size_x + size_correction_x * 2, 
-                screen_transform.size_y + shadow_offset_transform.size_y + size_correction_y)),
+                screen_transform.size_x + shadow_offset_transform.size_x + transform_correction.size_x * 2, 
+                screen_transform.size_y + shadow_offset_transform.size_y + transform_correction.size_y)),
         };
     
     if let Some((pos_x, pos_y, size_x, size_y)) = dock_position_result {
@@ -142,6 +134,18 @@ fn get_transform_for_dock_position(dock_position: DockPosition, screen_transform
     else {
         Err(())
     }
+}
+
+fn get_window_transform_corrections(has_shadow_offset: bool) -> WindowTransform {
+    let (mut pos_correction, mut size_correction_x, mut size_correction_y) = (0, 0, 0);
+
+    if has_shadow_offset {
+        pos_correction -= 1;
+        size_correction_x += 1;
+        size_correction_y += 1;
+    }
+
+    WindowTransform::new(pos_correction, 0, size_correction_x, size_correction_y)
 }
 
 unsafe fn get_screen_transforms(window: &mut HWND) -> Result<WindowTransform, ()> {
