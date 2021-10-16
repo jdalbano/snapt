@@ -39,9 +39,7 @@ pub unsafe fn create_app_instance() -> Result<Instance, Error> {
 }
 
 pub unsafe fn add_notification(notification: &mut shellapi::NOTIFYICONDATAW) {
-    shellapi::Shell_NotifyIconW(shellapi::NIM_ADD, notification); 
-    
-    //shellapi::Shell_NotifyIconW(shellapi::NIM_DELETE, notification); 
+    shellapi::Shell_NotifyIconW(shellapi::NIM_ADD, notification);
 }
 
 pub unsafe fn remove_notification(notification: &mut shellapi::NOTIFYICONDATAW) {
@@ -49,25 +47,11 @@ pub unsafe fn remove_notification(notification: &mut shellapi::NOTIFYICONDATAW) 
 }
 
 pub unsafe fn handle_message(window: windef::HWND) -> bool {
- 
-    // let mut message: mem::MaybeUninit<winuser::MSG> = mem::MaybeUninit::uninit();
-    let mut message : winuser::MSG = mem::uninitialized();
+    let mut message: mem::MaybeUninit<winuser::MSG> = mem::MaybeUninit::uninit();
 
-
-    if winuser::GetMessageW( &mut message as *mut winuser::MSG, window, 0, 0 ) > 0 {
-     
-
-        winuser::TranslateMessage( &message as *const winuser::MSG ); // Translate message into something meaningful with TranslateMessage
-    
-        winuser::DispatchMessageW( &message as *const winuser::MSG ); // Dispatch message with DispatchMessageW
-      
-
-        // winuser::TranslateMessage(message.as_mut_ptr() as *const winuser::MSG);
-        // print!("\n{:?}", (*(message.as_mut_ptr() as *mut winuser::MSG)).message);
-
-        // winuser::DispatchMessageW(message.as_mut_ptr() as *const winuser::MSG);
-        // print!("\n{:?}", (*(message.as_mut_ptr() as *mut winuser::MSG)).message);
-
+    if winuser::GetMessageW(message.as_mut_ptr() as *mut winuser::MSG, window, 0, 0 ) > 0 {
+        winuser::TranslateMessage(message.as_ptr() as *const winuser::MSG);    
+        winuser::DispatchMessageW(message.as_ptr() as *const winuser::MSG);
         true
     } else {
         false
