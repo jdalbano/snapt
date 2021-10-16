@@ -1,3 +1,4 @@
+pub mod notification_manager;
 mod dock_manager;
 mod dock_position;
 mod window_transform;

@@ -1,19 +1,20 @@
 use std::mem::size_of;
-use winapi;
+
+use winapi::shared::minwindef;
+use winapi::shared::windef;
+use winapi::um::winuser;
 
 use crate::window::window_transform::*;
 use crate::window::dock_position::*;
 
-type HWND = winapi::shared::windef::HWND__;
-type RECT = winapi::shared::windef::RECT;
-type MONTIORINFO = winapi::um::winuser::MONITORINFO;
-type LPVOID = winapi::shared::minwindef::LPVOID;
+type HWND = windef::HWND__;
+type RECT = windef::RECT;
 
 const CHANGE_THRESHOLD: i32 = 1;
 
 pub fn process_window_dock_change(dock_position: DockPosition) {
     unsafe{                
-        let window = winapi::um::winuser::GetForegroundWindow();
+        let window = winuser::GetForegroundWindow();
 
         let can_window_be_resized = check_if_window_can_be_resized(&mut *window);
 
@@ -24,9 +25,9 @@ pub fn process_window_dock_change(dock_position: DockPosition) {
 }
 
 unsafe fn check_if_window_can_be_resized(window: &mut HWND) -> bool {
-    let window_style = winapi::um::winuser::GetWindowLongA(window, winapi::um::winuser::GWL_STYLE);
+    let window_style = winuser::GetWindowLongA(window, winuser::GWL_STYLE);
     
-    (window_style & winapi::um::winuser::WS_MAXIMIZEBOX as i32) != 0
+    (window_style & winuser::WS_MAXIMIZEBOX as i32) != 0
 }
 
 unsafe fn change_window_dock_position(window: &mut HWND, dock_position: DockPosition) {
@@ -61,12 +62,12 @@ fn get_initial_window_transform(window_bounds: &RECT, shadow_bounds: &RECT, shad
 }
 
 unsafe fn restore_window(window: &mut HWND) {
-    winapi::um::winuser::ShowWindow(window, winapi::um::winuser::SW_SHOWNOACTIVATE);
+    winuser::ShowWindow(window, winuser::SW_SHOWNOACTIVATE);
 }
 
 unsafe fn get_window_bounds(window: &mut HWND) -> (bool, RECT) {
     let window_rect = &mut RECT { left: 0, right:0, top: 0, bottom: 0 } as *mut RECT;
-    let window_rect_result = winapi::um::winuser::GetWindowRect(window, window_rect);
+    let window_rect_result = winuser::GetWindowRect(window, window_rect);
 
     (window_rect_result != 0, *window_rect)
 }
@@ -76,7 +77,7 @@ unsafe fn get_shadow_bounds(window: &mut HWND) -> (bool, RECT) {
     let shadow_rect_result = winapi::um::dwmapi::DwmGetWindowAttribute(
         window,
         winapi::um::dwmapi::DWMWA_EXTENDED_FRAME_BOUNDS, 
-        shadow_rect as LPVOID, 
+        shadow_rect as minwindef::LPVOID, 
         size_of::<RECT>() as u32);
 
     (shadow_rect_result == 0, *shadow_rect)
@@ -161,17 +162,17 @@ unsafe fn get_screen_transforms(window: &mut HWND) -> Result<WindowTransform, ()
     }
 }
 
-unsafe fn get_current_monitor_info(window: &mut HWND) -> Result<MONTIORINFO, ()> {
-    let monitor = winapi::um::winuser::MonitorFromWindow(window, winapi::um::winuser::MONITOR_DEFAULTTONEAREST);
+unsafe fn get_current_monitor_info(window: &mut HWND) -> Result<winuser::MONITORINFO, ()> {
+    let monitor = winuser::MonitorFromWindow(window, winuser::MONITOR_DEFAULTTONEAREST);
 
-    let monitor_info = &mut MONTIORINFO {
-        cbSize: size_of::<MONTIORINFO>() as u32,
+    let monitor_info = &mut winuser::MONITORINFO {
+        cbSize: size_of::<winuser::MONITORINFO>() as u32,
         rcMonitor: RECT { left: 0, right:0, top: 0, bottom: 0 },
         rcWork: RECT { left: 0, right:0, top: 0, bottom: 0 },
         dwFlags: 0,
-    } as *mut MONTIORINFO;
+    } as *mut winuser::MONITORINFO;
 
-    let did_monitor_info_succeed = winapi::um::winuser::GetMonitorInfoA(monitor, monitor_info);
+    let did_monitor_info_succeed = winuser::GetMonitorInfoA(monitor, monitor_info);
 
     if did_monitor_info_succeed != 0 {
         Ok(*monitor_info)
@@ -188,7 +189,7 @@ unsafe fn set_window_transform(window: &mut HWND, initial_transform: WindowTrans
     let has_size_y_changed = (initial_transform.size_y - final_transform.size_y).abs() > CHANGE_THRESHOLD;
 
     if has_pos_x_changed || has_pos_y_changed || has_size_x_changed || has_size_y_changed {
-        winapi::um::winuser::SetWindowPos(window, winapi::um::winuser::HWND_TOP, final_transform.pos_x, final_transform.pos_y, final_transform.size_x, final_transform.size_y, winapi::um::winuser::SWP_SHOWWINDOW);
-        winapi::um::winuser::SetActiveWindow(window);
+        winuser::SetWindowPos(window, winuser::HWND_TOP, final_transform.pos_x, final_transform.pos_y, final_transform.size_x, final_transform.size_y, winuser::SWP_SHOWWINDOW);
+        winuser::SetActiveWindow(window);
     }
 }

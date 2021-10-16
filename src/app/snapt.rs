@@ -1,6 +1,6 @@
 use device_query::{DeviceQuery, DeviceState, Keycode};
 
-use crate::app::notification_manager;
+use crate::window::notification_manager;
 use crate::hotkeys;
 
 pub struct Snapt {
