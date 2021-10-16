@@ -151,8 +151,7 @@ unsafe fn handle_wnd_proc_notification_context_menu(hwnd: windef::HWND, msg: u32
 }
 
 unsafe fn handle_wnd_proc_default(hwnd: windef::HWND, msg: u32, wparam: minwindef::WPARAM, lparam: minwindef::LPARAM) -> minwindef::LRESULT {
-    let result = winuser::DefWindowProcW(hwnd, msg, wparam, lparam);
-    result
+    winuser::DefWindowProcW(hwnd, msg, wparam, lparam)
 }
 
 unsafe fn show_context_menu(hwnd: windef::HWND, point: windef::POINT)
