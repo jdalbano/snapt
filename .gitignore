@@ -405,3 +405,4 @@ FodyWeavers.xsd
 *.sln.iml
 
 wix/main.wxs
+eula.rtf
