@@ -34,7 +34,8 @@ pub unsafe fn create_app_interface(app_instance: *mut Snapt) -> Result<Interface
     let window = create_window_handle(&class_name, &app_name, module);
     bind_app_instance_to_window(app_instance, window);
 
-    let notification = create_notification(app_name, window, module);
+    let mut notification = create_notification(app_name, window, module);
+    add_notification(&mut notification);
 
     if window.is_null() {
         Err(Error::last_os_error())
@@ -43,12 +44,17 @@ pub unsafe fn create_app_interface(app_instance: *mut Snapt) -> Result<Interface
     }
 }
 
-pub unsafe fn add_notification(notification: &mut shellapi::NOTIFYICONDATAW) {
+pub unsafe fn destroy_app_interface(mut app_interface: Interface) {
+    remove_notification(&mut app_interface.notification);
+    winuser::PostMessageW(app_interface.window, winuser::WM_CLOSE, 0, 0);
+}
+
+unsafe fn add_notification(notification: &mut shellapi::NOTIFYICONDATAW) {
     shellapi::Shell_NotifyIconW(shellapi::NIM_ADD, notification);
     shellapi::Shell_NotifyIconW(shellapi::NIM_SETVERSION, notification);
 }
 
-pub unsafe fn remove_notification(notification: &mut shellapi::NOTIFYICONDATAW) {
+unsafe fn remove_notification(notification: &mut shellapi::NOTIFYICONDATAW) {
     shellapi::Shell_NotifyIconW(shellapi::NIM_DELETE, notification); 
 }
 
@@ -124,28 +130,34 @@ unsafe fn create_notification(app_name: Vec<u16>, window: windef::HWND, module: 
 
 unsafe extern "system" fn wnd_proc(hwnd: windef::HWND, msg: u32, wparam: minwindef::WPARAM, lparam: minwindef::LPARAM) -> minwindef::LRESULT {
     match msg {
-        NOTIFICATION_CALLBACK => {
-            match minwindef::LOWORD(lparam as u32) as u32 {
-                winuser::WM_CONTEXTMENU =>  { return handle_wnd_proc_notification_context_menu(hwnd, msg, wparam, lparam); },
-                _ => { (); }
-            }
-        },
-        WM_COMMAND => {
-            match minwindef::LOWORD(wparam as u32) {
-                resources::IDM_PAUSE => print!("pausing!!!\n\n"),
-                resources::IDM_EXIT => print!("exiting!!!\n\n"),
-                _ => { (); }
-            }
-        }
-        _ => { (); }
+        NOTIFICATION_CALLBACK => handle_wnd_proc_notification_callback(hwnd, msg, wparam, lparam),
+        WM_COMMAND => handle_wnd_proc_wm_command(hwnd, msg, wparam, lparam),
+        _ => handle_wnd_proc_default(hwnd, msg, wparam, lparam)
     }
-
-    handle_wnd_proc_default(hwnd, msg, wparam, lparam)
 }
 
-unsafe fn handle_wnd_proc_notification_context_menu(hwnd: windef::HWND, msg: u32, wparam: minwindef::WPARAM, lparam: minwindef::LPARAM) -> minwindef::LRESULT  {  
-    let point = windef::POINT { x: minwindef::LOWORD(wparam as u32) as i32, y: minwindef::HIWORD(wparam as u32) as i32 };
-    show_context_menu(hwnd, point);
+unsafe fn handle_wnd_proc_notification_callback(hwnd: windef::HWND, msg: u32, wparam: minwindef::WPARAM, lparam: minwindef::LPARAM) -> minwindef::LRESULT {
+    match minwindef::LOWORD(lparam as u32) as u32 {
+        winuser::WM_CONTEXTMENU => {
+            let point = windef::POINT { x: minwindef::LOWORD(wparam as u32) as i32, y: minwindef::HIWORD(wparam as u32) as i32 };
+            show_context_menu(hwnd, point);
+            0
+        },
+        _ => handle_wnd_proc_default(hwnd, msg, wparam, lparam)
+    }
+}
+
+unsafe fn handle_wnd_proc_wm_command(hwnd: windef::HWND, msg: u32, wparam: minwindef::WPARAM, lparam: minwindef::LPARAM) -> minwindef::LRESULT {
+    let app_instance_option = (winuser::GetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA) as *mut Snapt).as_mut();
+
+    if let Some(app_instance) = app_instance_option {
+        match minwindef::LOWORD(wparam as u32) {
+            resources::IDM_PAUSE => app_instance.pause_main_loop(),
+            resources::IDM_RESUME => app_instance.resume_main_loop(),
+            resources::IDM_EXIT => app_instance.exit_app(),
+            _ => { return handle_wnd_proc_default(hwnd, msg, wparam, lparam); }
+        }
+    }
 
     0
 }
@@ -163,9 +175,15 @@ unsafe fn show_context_menu(hwnd: windef::HWND, point: windef::POINT)
         let submenu_option = winuser::GetSubMenu(context_menu, 0).as_mut();
 
         if let Some(submenu) = submenu_option {
-            // let app_instance_option = (winuser::GetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA) as *mut Snapt).as_mut();
-            winuser::SetForegroundWindow(hwnd);                
-            winuser::TrackPopupMenuEx(submenu, winuser::TPM_LEFTALIGN, point.x, point.y, hwnd, null_mut());
+            let app_instance_option = (winuser::GetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA) as *mut Snapt).as_mut();
+
+            if let Some(app_instance) = app_instance_option {
+                let command_to_remove = if (*app_instance).do_pause { resources::IDM_PAUSE } else { resources:: IDM_RESUME };
+                winuser::RemoveMenu(submenu, command_to_remove as u32, winuser::MF_BYCOMMAND);
+
+                winuser::SetForegroundWindow(hwnd);                
+                winuser::TrackPopupMenuEx(submenu, winuser::TPM_LEFTALIGN, point.x, point.y, hwnd, null_mut());
+            }
         }
 
         winuser::DestroyMenu(context_menu);

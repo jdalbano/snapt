@@ -10,31 +10,47 @@ pub const APP_NAME: &str = "Snapt";
 
 pub struct Snapt {
     pub do_pause: bool,
+    do_exit: bool,
 }
 
 impl Snapt {
     pub fn new() -> Snapt {
         Snapt { 
-            do_pause: true, 
+            do_pause: false,
+            do_exit: false,
         }
     }
 
     pub fn run(&mut self) {
         let interface_result = self.start_app_interface();
 
-        if let Ok(mut interface) = interface_result {
-            self.setup_notification(&mut interface);
+        if let Ok(interface) = interface_result {
+            self.main_loop(&interface);
 
-            self.main_loop(interface);
+            self.end_app_interface(interface);
         }
-
-        self.close_app();
     }
 
-    fn main_loop(&self, interface: AppInterface) {
+    pub fn pause_main_loop(&mut self) {
+        self.do_pause = true;
+    }
+
+    pub fn resume_main_loop(&mut self) {
+        self.do_pause = false;
+    }
+
+    pub fn exit_app(&mut self) {
+        self.do_exit = true;
+    }
+
+    fn main_loop(&self, interface: &AppInterface) {
         self.start_monitoring_keys();
 
         loop {
+            if self.do_exit {
+                break;
+            }
+
             let was_message_handled = self.handle_interface_messages(&interface);
 
             if !was_message_handled {
@@ -49,11 +65,11 @@ impl Snapt {
             let device_state = DeviceState::new();
             let hotkey_profile = &hotkeys::hotkey_loader::load_hotkey_profile();
             
-            loop {    
-                if !(&do_pause) {
+            loop {
+                if !do_pause {
                     let keys: Vec<Keycode> = device_state.get_keys();
                     let _did_process = hotkey_profile.process_incoming_keys(&keys);   
-                } 
+                }
             }
         });
     }
@@ -62,11 +78,11 @@ impl Snapt {
         unsafe {
             app_interface::create_app_interface(self as *mut Snapt)
         }
-    }
-
-    fn setup_notification(&self, instance: &mut AppInterface) {
+    }    
+    
+    fn end_app_interface(&self, interface: AppInterface) {
         unsafe {
-            app_interface::add_notification(&mut instance.notification);
+            app_interface::destroy_app_interface(interface);
         }
     }
 
@@ -74,20 +90,6 @@ impl Snapt {
         unsafe {
             app_interface::handle_messages(instance.window)
         }
-    }
-
-    fn close_app(&self) {
-        unsafe {
-            
-        }
-    }
-
-    fn pause_main_loop(&mut self) {
-        self.do_pause = true;
-    }
-
-    fn resume_main_loop(&mut self) {
-        self.do_pause = false;
     }
 }
 
