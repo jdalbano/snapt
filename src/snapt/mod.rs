@@ -1,5 +1,6 @@
 pub mod resources;
 mod app;
+mod control;
 mod interface;
 
 pub fn run() {

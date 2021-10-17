@@ -8,9 +8,10 @@ use winapi::um::*;
 use winapi::shared::minwindef;
 use winapi::shared::windef;
 
-use crate::snapt::resources;
 use crate::snapt::app;
 use crate::snapt::app::App;
+use crate::snapt::control;
+use crate::snapt::resources;
 
 const CLASS_NAME: &str = "interface";
 const NOTIFICATION_ID: u32 = 3434773434;
@@ -150,11 +151,11 @@ unsafe fn handle_wnd_proc_notification_callback(hwnd: windef::HWND, msg: u32, wp
 unsafe fn handle_wnd_proc_wm_command(hwnd: windef::HWND, msg: u32, wparam: minwindef::WPARAM, lparam: minwindef::LPARAM) -> minwindef::LRESULT {
     let app_instance_option = (winuser::GetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA) as *mut App).as_mut();
 
-    if let Some(app_instance) = app_instance_option {
+    if let Some(_) = app_instance_option {
         match minwindef::LOWORD(wparam as u32) {
-            resources::IDM_PAUSE => app_instance.pause_app(),
-            resources::IDM_RESUME => app_instance.resume_app(),
-            resources::IDM_EXIT => app_instance.exit_app(),
+            resources::IDM_PAUSE => control::pause_app(),
+            resources::IDM_RESUME => control::resume_app(),
+            resources::IDM_EXIT => control::exit_app(),
             _ => { return handle_wnd_proc_default(hwnd, msg, wparam, lparam); }
         }
     }
@@ -177,8 +178,8 @@ unsafe fn show_context_menu(hwnd: windef::HWND, point: windef::POINT)
         if let Some(submenu) = submenu_option {
             let app_instance_option = (winuser::GetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA) as *mut App).as_mut();
 
-            if let Some(app_instance) = app_instance_option {
-                let command_to_remove = if (*app_instance).do_pause { resources::IDM_PAUSE } else { resources:: IDM_RESUME };
+            if let Some(_) = app_instance_option {
+                let command_to_remove = if control::get_do_pause() { resources::IDM_PAUSE } else { resources::IDM_RESUME };
                 winuser::RemoveMenu(submenu, command_to_remove as u32, winuser::MF_BYCOMMAND);
 
                 winuser::SetForegroundWindow(hwnd);                

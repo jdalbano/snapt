@@ -2,23 +2,18 @@ use std::io::Error;
 
 use device_query::{DeviceQuery, DeviceState, Keycode};
 
+use crate::snapt::control;
 use crate::snapt::interface;
 use crate::snapt::interface::Interface;
 use crate::hotkeys;
 
 pub const APP_NAME: &str = "Snapt";
 
-pub struct App {
-    pub do_pause: bool,
-    do_exit: bool,
-}
+pub struct App { }
 
 impl App {
     pub fn new() -> App {
-        App { 
-            do_pause: false,
-            do_exit: false,
-        }
+        App { }
     }
 
     pub fn run(&mut self) {
@@ -31,23 +26,11 @@ impl App {
         }
     }
 
-    pub fn pause_app(&mut self) {
-        self.do_pause = true;
-    }
-
-    pub fn resume_app(&mut self) {
-        self.do_pause = false;
-    }
-
-    pub fn exit_app(&mut self) {
-        self.do_exit = true;
-    }
-
     fn main_loop(&self, interface: &Interface) {
         self.start_monitoring_keys();
 
         loop {
-            if self.do_exit {
+            if control::get_do_exit() {
                 break;
             }
 
@@ -61,12 +44,16 @@ impl App {
 
     fn start_monitoring_keys(&self) {
         std::thread::spawn(|| {
-            let do_pause = false;
             let device_state = DeviceState::new();
             let hotkey_profile = &hotkeys::hotkey_loader::load_hotkey_profile();
             
             loop {
-                if !do_pause {
+                if control::get_do_exit() {
+                    break;
+                }
+
+                if !control::get_do_pause() {
+                    print!("keys good\n");
                     let keys: Vec<Keycode> = device_state.get_keys();
                     let _did_process = hotkey_profile.process_incoming_keys(&keys);   
                 }
