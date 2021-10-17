@@ -35,7 +35,7 @@ pub unsafe fn create_app_interface(app_instance: *mut App) -> Result<Interface, 
     let window = create_window_handle(&class_name, module);
     bind_app_instance_to_window(app_instance, window);
 
-    let mut notification = create_notification( window, module);
+    let mut notification = create_notification(window, module);
     add_notification(&mut notification);
 
     if window.is_null() {
