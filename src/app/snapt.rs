@@ -31,11 +31,11 @@ impl Snapt {
         }
     }
 
-    pub fn pause_main_loop(&mut self) {
+    pub fn pause_app(&mut self) {
         self.do_pause = true;
     }
 
-    pub fn resume_main_loop(&mut self) {
+    pub fn resume_app(&mut self) {
         self.do_pause = false;
     }
 

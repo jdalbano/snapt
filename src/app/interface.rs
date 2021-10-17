@@ -152,8 +152,8 @@ unsafe fn handle_wnd_proc_wm_command(hwnd: windef::HWND, msg: u32, wparam: minwi
 
     if let Some(app_instance) = app_instance_option {
         match minwindef::LOWORD(wparam as u32) {
-            resources::IDM_PAUSE => app_instance.pause_main_loop(),
-            resources::IDM_RESUME => app_instance.resume_main_loop(),
+            resources::IDM_PAUSE => app_instance.pause_app(),
+            resources::IDM_RESUME => app_instance.resume_app(),
             resources::IDM_EXIT => app_instance.exit_app(),
             _ => { return handle_wnd_proc_default(hwnd, msg, wparam, lparam); }
         }
