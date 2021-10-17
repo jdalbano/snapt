@@ -8,9 +8,9 @@ use winapi::um::*;
 use winapi::shared::minwindef;
 use winapi::shared::windef;
 
-use crate::app::resources;
-use crate::app::snapt;
-use crate::app::snapt::Snapt;
+use crate::snapt::resources;
+use crate::snapt::app;
+use crate::snapt::app::App;
 
 const CLASS_NAME: &str = "interface";
 const NOTIFICATION_ID: u32 = 3434773434;
@@ -22,9 +22,9 @@ pub struct Interface {
     pub notification: shellapi::NOTIFYICONDATAW,
 }
 
-pub unsafe fn create_app_interface(app_instance: *mut Snapt) -> Result<Interface, Error> {
+pub unsafe fn create_app_interface(app_instance: *mut App) -> Result<Interface, Error> {
     let class_name = OsStr::new(CLASS_NAME).encode_wide().chain(Some(0).into_iter()).collect::<Vec<u16>>();
-    let app_name = OsStr::new(snapt::APP_NAME).encode_wide().chain(Some(0).into_iter()).collect::<Vec<u16>>();
+    let app_name = OsStr::new(app::APP_NAME).encode_wide().chain(Some(0).into_iter()).collect::<Vec<u16>>();
 
     let module = libloaderapi::GetModuleHandleW(null_mut());    
     let wnd_class = create_wnd_class(&class_name, module);
@@ -101,7 +101,7 @@ unsafe fn create_window_handle(class_name: &Vec<u16>, app_name: &Vec<u16>, modul
         null_mut())
 }
 
-unsafe fn bind_app_instance_to_window(app_instance: *mut Snapt, window: windef::HWND) {
+unsafe fn bind_app_instance_to_window(app_instance: *mut App, window: windef::HWND) {
     winuser::SetWindowLongPtrW(window, winuser::GWLP_USERDATA, (app_instance) as isize);
 }
 
@@ -148,7 +148,7 @@ unsafe fn handle_wnd_proc_notification_callback(hwnd: windef::HWND, msg: u32, wp
 }
 
 unsafe fn handle_wnd_proc_wm_command(hwnd: windef::HWND, msg: u32, wparam: minwindef::WPARAM, lparam: minwindef::LPARAM) -> minwindef::LRESULT {
-    let app_instance_option = (winuser::GetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA) as *mut Snapt).as_mut();
+    let app_instance_option = (winuser::GetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA) as *mut App).as_mut();
 
     if let Some(app_instance) = app_instance_option {
         match minwindef::LOWORD(wparam as u32) {
@@ -175,7 +175,7 @@ unsafe fn show_context_menu(hwnd: windef::HWND, point: windef::POINT)
         let submenu_option = winuser::GetSubMenu(context_menu, 0).as_mut();
 
         if let Some(submenu) = submenu_option {
-            let app_instance_option = (winuser::GetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA) as *mut Snapt).as_mut();
+            let app_instance_option = (winuser::GetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA) as *mut App).as_mut();
 
             if let Some(app_instance) = app_instance_option {
                 let command_to_remove = if (*app_instance).do_pause { resources::IDM_PAUSE } else { resources:: IDM_RESUME };

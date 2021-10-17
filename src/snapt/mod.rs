@@ -1,8 +1,8 @@
 pub mod resources;
+mod app;
 mod interface;
-mod snapt;
 
 pub fn run() {
-    let mut app = snapt::Snapt::new();
+    let mut app = app::App::new();
     app.run();
 }

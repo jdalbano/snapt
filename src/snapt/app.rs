@@ -2,20 +2,20 @@ use std::io::Error;
 
 use device_query::{DeviceQuery, DeviceState, Keycode};
 
-use crate::app::interface as app_interface;
-use crate::app::interface::Interface as AppInterface;
+use crate::snapt::interface;
+use crate::snapt::interface::Interface;
 use crate::hotkeys;
 
 pub const APP_NAME: &str = "Snapt";
 
-pub struct Snapt {
+pub struct App {
     pub do_pause: bool,
     do_exit: bool,
 }
 
-impl Snapt {
-    pub fn new() -> Snapt {
-        Snapt { 
+impl App {
+    pub fn new() -> App {
+        App { 
             do_pause: false,
             do_exit: false,
         }
@@ -43,7 +43,7 @@ impl Snapt {
         self.do_exit = true;
     }
 
-    fn main_loop(&self, interface: &AppInterface) {
+    fn main_loop(&self, interface: &Interface) {
         self.start_monitoring_keys();
 
         loop {
@@ -74,21 +74,21 @@ impl Snapt {
         });
     }
 
-    fn start_app_interface(&mut self) -> Result<AppInterface, Error> {
+    fn start_app_interface(&mut self) -> Result<Interface, Error> {
         unsafe {
-            app_interface::create_app_interface(self as *mut Snapt)
+            interface::create_app_interface(self as *mut App)
         }
     }    
     
-    fn end_app_interface(&self, interface: AppInterface) {
+    fn end_app_interface(&self, interface: Interface) {
         unsafe {
-            app_interface::destroy_app_interface(interface);
+            interface::destroy_app_interface(interface);
         }
     }
 
-    fn handle_interface_messages(&self, instance: &AppInterface) -> bool {
+    fn handle_interface_messages(&self, instance: &Interface) -> bool {
         unsafe {
-            app_interface::handle_messages(instance.window)
+            interface::handle_messages(instance.window)
         }
     }
 }

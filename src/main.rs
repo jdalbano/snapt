@@ -1,9 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod app;
 mod hotkeys;
+mod snapt;
 mod window;
 
 fn main() {
-    app::run();
+    snapt::run();
 }
