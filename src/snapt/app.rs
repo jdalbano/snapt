@@ -53,7 +53,6 @@ impl App {
                 }
 
                 if !control::get_do_pause() {
-                    print!("keys good\n");
                     let keys: Vec<Keycode> = device_state.get_keys();
                     let _did_process = hotkey_profile.process_incoming_keys(&keys);   
                 }

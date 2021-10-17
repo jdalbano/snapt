@@ -16,6 +16,7 @@ use crate::snapt::resources;
 const CLASS_NAME: &str = "interface";
 const NOTIFICATION_ID: u32 = 3434773434;
 const NOTIFICATION_CALLBACK: u32 = winuser::WM_APP + 1;
+const PAUSED_TEXT: &str = " (Paused)";
 const WM_COMMAND: u32 = winuser::WM_COMMAND as u32;
 
 pub struct Interface {
@@ -25,17 +26,16 @@ pub struct Interface {
 
 pub unsafe fn create_app_interface(app_instance: *mut App) -> Result<Interface, Error> {
     let class_name = OsStr::new(CLASS_NAME).encode_wide().chain(Some(0).into_iter()).collect::<Vec<u16>>();
-    let app_name = OsStr::new(app::APP_NAME).encode_wide().chain(Some(0).into_iter()).collect::<Vec<u16>>();
 
     let module = libloaderapi::GetModuleHandleW(null_mut());    
     let wnd_class = create_wnd_class(&class_name, module);
 
     winuser::RegisterClassW(&wnd_class);
 
-    let window = create_window_handle(&class_name, &app_name, module);
+    let window = create_window_handle(&class_name, module);
     bind_app_instance_to_window(app_instance, window);
 
-    let mut notification = create_notification(app_name, window, module);
+    let mut notification = create_notification( window, module);
     add_notification(&mut notification);
 
     if window.is_null() {
@@ -57,6 +57,12 @@ unsafe fn add_notification(notification: &mut shellapi::NOTIFYICONDATAW) {
 
 unsafe fn remove_notification(notification: &mut shellapi::NOTIFYICONDATAW) {
     shellapi::Shell_NotifyIconW(shellapi::NIM_DELETE, notification); 
+}
+
+unsafe fn modify_notification(hwnd: windef::HWND) {
+    let module = winuser::GetWindowLongPtrW(hwnd, winuser::GWLP_HINSTANCE);
+    let mut notification = create_notification(hwnd, module as minwindef::HMODULE);
+    shellapi::Shell_NotifyIconW(shellapi::NIM_MODIFY, &mut notification);
 }
 
 pub unsafe fn handle_messages(window: windef::HWND) -> bool {
@@ -86,7 +92,9 @@ unsafe fn create_wnd_class(class_name: &Vec<u16>, module: minwindef::HMODULE) ->
     }
 }
 
-unsafe fn create_window_handle(class_name: &Vec<u16>, app_name: &Vec<u16>, module: minwindef::HMODULE) -> windef::HWND {
+unsafe fn create_window_handle(class_name: &Vec<u16>, module: minwindef::HMODULE) -> windef::HWND {
+    let app_name = OsStr::new(app::APP_NAME).encode_wide().chain(Some(0).into_iter()).collect::<Vec<u16>>();
+
     winuser::CreateWindowExW(
         0,
         class_name.as_ptr(),
@@ -106,9 +114,11 @@ unsafe fn bind_app_instance_to_window(app_instance: *mut App, window: windef::HW
     winuser::SetWindowLongPtrW(window, winuser::GWLP_USERDATA, (app_instance) as isize);
 }
 
-unsafe fn create_notification(app_name: Vec<u16>, window: windef::HWND, module: minwindef::HMODULE) -> shellapi::NOTIFYICONDATAW {
+unsafe fn create_notification(window: windef::HWND, module: minwindef::HMODULE) -> shellapi::NOTIFYICONDATAW {
+    let tooltip = app::APP_NAME.to_owned() + if control::get_do_pause() { PAUSED_TEXT } else { "" };
+    let tooltip_vec = OsStr::new(&tooltip).encode_wide().chain(Some(0).into_iter()).collect::<Vec<u16>>();
     let mut tooltip_sz: [u16; 128] = [0; 128];
-    tooltip_sz[..app_name.len()].copy_from_slice(&app_name); 
+    tooltip_sz[..tooltip_vec.len()].copy_from_slice(&tooltip_vec); 
     
     let ico_resource: Vec<u16> = OsStr::new(resources::MAIN_ICON).encode_wide().chain(Some(0).into_iter()).collect();
 
@@ -119,7 +129,7 @@ unsafe fn create_notification(app_name: Vec<u16>, window: windef::HWND, module: 
         uCallbackMessage: NOTIFICATION_CALLBACK,
         hIcon: winuser::LoadIconW(module, ico_resource.as_ptr()),
         szTip: tooltip_sz,
-        uFlags: shellapi::NIF_MESSAGE | shellapi::NIF_ICON | shellapi::NIF_TIP,
+        uFlags: shellapi::NIF_MESSAGE | shellapi::NIF_ICON | shellapi::NIF_TIP | shellapi::NIF_SHOWTIP,
         ..Default::default()
     };
 
@@ -153,8 +163,8 @@ unsafe fn handle_wnd_proc_wm_command(hwnd: windef::HWND, msg: u32, wparam: minwi
 
     if let Some(_) = app_instance_option {
         match minwindef::LOWORD(wparam as u32) {
-            resources::IDM_PAUSE => control::pause_app(),
-            resources::IDM_RESUME => control::resume_app(),
+            resources::IDM_PAUSE => { control::pause_app(); modify_notification(hwnd); },
+            resources::IDM_RESUME => { control::resume_app(); modify_notification(hwnd); },
             resources::IDM_EXIT => control::exit_app(),
             _ => { return handle_wnd_proc_default(hwnd, msg, wparam, lparam); }
         }
