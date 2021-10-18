@@ -1,6 +1,6 @@
 #include "resources.h"
 
-MAIN_ICON ICON "resources\\snapt.ico"
+MAIN_ICON ICON "snapt.ico"
 
 IDC_CONTEXTMENU MENU
 BEGIN
