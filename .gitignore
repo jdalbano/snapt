@@ -404,5 +404,6 @@ FodyWeavers.xsd
 .idea/
 *.sln.iml
 
-wix/main.wxs
+installer/
+wix/
 eula.rtf
