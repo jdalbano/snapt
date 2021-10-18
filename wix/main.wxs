@@ -111,6 +111,25 @@
               </Directory>
             </Directory>
 
+            <Directory Id="StartupFolder">
+              <Component Id="SnaptStartup" Guid="*">
+                <Shortcut Id="StartupShortcut"
+                  Name="Snapt"
+                  Description="Launch Snapt"
+                  Target="[APPLICATIONFOLDER]\bin\snapt.exe"
+                  WorkingDirectory="APPLICATIONFOLDER"
+                  Icon="SnaptIcon"/>
+
+                <RegistryValue
+                  Root="HKCU"
+                  Key="Software\Snapt\Startup"
+                  Name="installed"
+                  Type="integer"
+                  Value="1"
+                  KeyPath="yes"/>
+              </Component>
+            </Directory>
+
             <Directory Id='$(var.PlatformProgramFilesFolder)' Name='PFiles'>
                 <Directory Id='APPLICATIONFOLDER' Name='Snapt'>
                     <Component Id='License' Guid='*' Win64='$(var.Win64)'>
@@ -185,6 +204,7 @@
             <ComponentRef Id='binary0'/>
             <ComponentRef Id='SnaptDesktop'/>
             <ComponentRef Id='SnaptProgramMenu'/>
+            <ComponentRef Id='SnaptStartup'/>
             <ComponentRef Id='UninstallSnapt'/>
 
             <Feature
