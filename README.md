@@ -1,5 +1,5 @@
 <h1>Description</h1>
-<p>Snapt is a simple window management app for Windows operating system. It primarily allows docking configuration enabled by hotkey combinations.</p>
+<p>Snapt is a simple window utility app which allows docking configuration enabled by hotkey combinations.</p>
 
 <h1>Usage</h1>
 
