@@ -1,0 +1,230 @@
+<?xml version='1.0' encoding='windows-1252'?>
+<!--
+  Copyright (C) 2017 Christopher R. Field.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!--
+  Please do not remove these pre-processor If-Else blocks. These are used with
+  the `cargo wix` subcommand to automatically determine the installation
+  destination for 32-bit versus 64-bit installers. Removal of these lines will
+  cause installation errors.
+-->
+<?if $(var.Platform) = x64 ?>
+    <?define Win64 = "yes" ?>
+    <?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
+<?else ?>
+  <?define Win64 = "no" ?>
+  <?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
+<?endif ?>
+
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+
+    <Product
+        Id='*'
+        Name='Snapt'
+        UpgradeCode='ADCC6C4B-6F8E-4F15-A712-6AA952084906'
+        Manufacturer='Joseph DAlbano'
+        Language='1033'
+        Codepage='1252'
+        Version='$(var.Version)'>
+
+        <Package Id='*'
+            Keywords='Installer'
+            Description='Snapt is a window management app for Windows operating system. It primarily allows docking configuration enabled by hotkey combinations.'
+            Manufacturer='Joseph DAlbano'
+            InstallerVersion='450'
+            Languages='1033'
+            Compressed='yes'
+            InstallScope='perMachine'
+            SummaryCodepage='1252'
+            Platform='$(var.Platform)'/>
+
+        <MajorUpgrade
+            Schedule='afterInstallInitialize'
+            DowngradeErrorMessage='A newer version of [ProductName] is already installed. Setup will now exit.'/>
+
+        <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1'/>
+        <Property Id='DiskPrompt' Value='Snapt Installation'/>
+        
+        <Icon Id="SnaptIcon" SourceFile="resources\snapt.ico" />  
+
+        <Directory Id='TARGETDIR' Name='SourceDir'>
+            <Directory Id="DesktopFolder" Name="Desktop">
+              <Component Id="SnaptDesktop" Guid="*">
+                <Shortcut Id="DesktopShortcut"
+                  Name="Snapt"
+                  Description="Launch Snapt"
+                  Target="[APPLICATIONFOLDER]\bin\snapt.exe"
+                  WorkingDirectory="APPLICATIONFOLDER"
+                  Icon="SnaptIcon"/>
+
+                <RemoveFolder Id="DesktopFolder" On="uninstall"/>
+
+                <RegistryValue
+                  Root="HKCU"
+                  Key="Software\Snapt\Desktop"
+                  Name="installed"
+                  Type="integer"
+                  Value="1"
+                  KeyPath="yes"/>
+              </Component>
+            </Directory>
+
+            <Directory Id="ProgramMenuFolder" Name="Programs">
+              <Directory Id="SnaptProgramMenuFolder" Name="Snapt">
+                <Component Id="SnaptProgramMenu" Guid="ef58b899-ad65-4294-b4f7-8c1873f410c1">
+                  <Shortcut Id="ProgramMenuShortcut"
+                    Name="Snapt"
+                    Description="Launch Snapt"
+                    Target="[APPLICATIONFOLDER]\bin\snapt.exe"
+                    WorkingDirectory="APPLICATIONFOLDER"
+                    Icon="SnaptIcon"/>
+
+                  <Shortcut Id="ReadMeStartMenuShortcut"             
+                    Name="Open ReadMe"
+                    Description="Open ReadMe"
+                    Target="[APPLICATIONFOLDER]\readme.html"/>
+
+
+                  <Shortcut Id="UninstallStartMenuShortcut"             
+                    Name="Uninstall Snapt"
+                    Description="Uninstall Snapt"
+                    Target="[System64Folder]msiexec.exe"
+                    Arguments="/x [ProductCode]"/>
+
+                  <RemoveFolder Id="SnaptProgramMenuFolder" On="uninstall"/>
+
+                  <RegistryValue Root="HKCU" Key="Software\Snapt\ProgramMenu" Type="integer" Value="1" Name="installed" KeyPath="yes" />
+                </Component>
+              </Directory>
+            </Directory>
+
+            <Directory Id='$(var.PlatformProgramFilesFolder)' Name='PFiles'>
+                <Directory Id='APPLICATIONFOLDER' Name='Snapt'>
+                    <Component Id='License' Guid='*' Win64='$(var.Win64)'>
+                        <File Id='LicenseFile'
+                            Name='eula.rtf'
+                            DiskId='1'
+                            Source='installer\eula.rtf'
+                            KeyPath='yes'/>
+                    </Component>
+                    <Component Id='ReadMeTxt' Guid='*' Win64='$(var.Win64)'>
+                        <File Id='ReadMeTxtFile'
+                            Name='readme.txt'
+                            DiskId='1'
+                            Source='installer\readme.txt'
+                            KeyPath='yes'/>
+                    </Component>
+                    <Component Id='ReadMeUrl' Guid='*' Win64='$(var.Win64)'>
+                        <File Id='ReadMeUrlFile'
+                            Name='readme.html'
+                            DiskId='1'
+                            Source='installer\readme.html'
+                            KeyPath='yes'/>
+                    </Component>
+
+                    <Directory Id='Bin' Name='bin'>
+                        <Component Id='Path' Guid='EE3B24BA-5C90-4B84-A7BA-9B40429920AB' Win64='$(var.Win64)' KeyPath='yes'>
+                            <Environment
+                                Id='PATH'
+                                Name='PATH'
+                                Value='[Bin]'
+                                Permanent='no'
+                                Part='last'
+                                Action='set'
+                                System='yes'/>
+                        </Component>
+
+                        <Component Id='binary0' Guid='*' Win64='$(var.Win64)'>
+                            <File
+                                Id='exe0'
+                                Name='snapt.exe'
+                                DiskId='1'
+                                Source='target\$(var.Profile)\snapt.exe'
+                                KeyPath='yes'/>
+                        </Component>
+
+                         <Component Id="UninstallSnapt" Guid="bdc4a698-a9e1-41c2-864e-c7f4ab240899" Win64='$(var.Win64)' KeyPath='yes' >                    
+                          <Shortcut Id="UninstallShortcut"             
+                            Name="uninstall"
+                            Description="Uninstalls Snapt"
+                            Target="[System64Folder]msiexec.exe"
+                            Arguments="/x [ProductCode]"
+                            WorkingDirectory='APPLICATIONFOLDER'/>
+                          </Component>
+                    </Directory>
+                </Directory>
+            </Directory>
+        </Directory>
+        
+        <Feature
+            Id='Binaries'
+            Title='Application'
+            Description='Installs all binaries and the license.'
+            Level='1'
+            ConfigurableDirectory='APPLICATIONFOLDER'
+            AllowAdvertise='no'
+            Display='expand'
+            Absent='disallow'>
+
+            <ComponentRef Id='License'/>    
+            <ComponentRef Id='ReadMeTxt'/>   
+            <ComponentRef Id='ReadMeUrl'/>           
+            <ComponentRef Id='binary0'/>
+            <ComponentRef Id='SnaptDesktop'/>
+            <ComponentRef Id='SnaptProgramMenu'/>
+            <ComponentRef Id='UninstallSnapt'/>
+
+            <Feature
+                Id='Environment'
+                Title='PATH Environment Variable'
+                Description='Add the install location of the [ProductName] executable to the PATH system environment variable. This allows the [ProductName] executable to be called from any location.'
+                Level='1'
+                Absent='allow'>
+                <ComponentRef Id='Path'/>
+            </Feature>
+        </Feature>
+
+        <SetProperty Id='ARPINSTALLLOCATION' Value='[APPLICATIONFOLDER]' After='CostFinalize'/>
+
+        <Property Id="ARPPRODUCTICON" Value="SnaptIcon" />   
+        <Property Id='ARPHELPLINK' Value='https://github.com/jdalbano/snapt'/>
+        
+        <UI>
+            <UIRef Id='WixUI_FeatureTree'/>
+        </UI>
+
+        <WixVariable Id='WixUILicenseRtf' Value='installer\eula.rtf'/>
+        
+        <CustomAction Id="EXECUTE_AFTER_FINALIZE"                  
+          Execute="immediate" 
+          Impersonate="yes"
+          Return="asyncNoWait"
+          FileKey="exe0"
+          ExeCommand="" />
+
+          <Property Id="WixShellExecTarget" Value="https://github.com/jdalbano/snapt/blob/main/README.md" />
+          <CustomAction Id="OPEN_README" 
+              BinaryKey="WixCA" 
+              DllEntry="WixShellExec"
+              Impersonate="yes" />
+
+        <InstallExecuteSequence>
+          <Custom Action="EXECUTE_AFTER_FINALIZE" After="InstallFinalize">NOT Installed</Custom>
+          <Custom Action="OPEN_README" After="InstallFinalize">NOT Installed</Custom>
+        </InstallExecuteSequence>
+
+    </Product>
+</Wix>
