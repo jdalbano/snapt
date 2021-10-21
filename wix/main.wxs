@@ -134,9 +134,9 @@
                 <Directory Id='APPLICATIONFOLDER' Name='Snapt'>
                     <Component Id='License' Guid='*' Win64='$(var.Win64)'>
                         <File Id='LicenseFile'
-                            Name='eula.rtf'
+                            Name='eula.txt'
                             DiskId='1'
-                            Source='installer\eula.rtf'
+                            Source='installer\eula.txt'
                             KeyPath='yes'/>
                     </Component>
                     <Component Id='ReadMeTxt' Guid='*' Win64='$(var.Win64)'>
@@ -226,7 +226,7 @@
             <UIRef Id='WixUI_FeatureTree'/>
         </UI>
 
-        <WixVariable Id='WixUILicenseRtf' Value='installer\eula.rtf'/>
+        <WixVariable Id='WixUILicenseRtf' Value='installer\eula.txt'/>
         
         <CustomAction Id="EXECUTE_AFTER_FINALIZE"                  
           Execute="immediate" 
