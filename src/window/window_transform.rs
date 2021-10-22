@@ -10,3 +10,14 @@ impl WindowTransform {
         WindowTransform { pos_x, pos_y, size_x, size_y }
     }
 }
+
+impl PartialEq for WindowTransform {
+    fn eq(&self, other: &Self) -> bool {
+        self.pos_x == other.pos_x &&
+        self.pos_y == other.pos_y &&
+        self.size_x == other.size_x &&
+        self.size_y == other.size_y
+    }
+}
+
+impl Eq for WindowTransform {}

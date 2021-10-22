@@ -10,51 +10,65 @@ use crate::window::dock::position::*;
 type HWND = windef::HWND__;
 type RECT = windef::RECT;
 
-const CHANGE_THRESHOLD: i32 = 0;
-
 pub fn process_window_dock_change(dock_position: Position) {
     unsafe{                
         let window = winuser::GetForegroundWindow();
 
-        let can_window_be_resized = check_if_window_can_be_resized(&mut *window);
+        let can_window_be_transformed = check_if_window_can_be_transformed(&mut *window);
 
-        if can_window_be_resized {
+        if can_window_be_transformed {
             restore_window(&mut *window);
-            change_window_dock_position(&mut *window, dock_position);
+            let new_transform_option = get_transform_for_dock_change(&mut *window, dock_position);
+
+            if let Some(new_transform) = new_transform_option {
+                set_window_transform(&mut *window, new_transform);
+            }
         }
     }
 }
 
-unsafe fn check_if_window_can_be_resized(window: &mut HWND) -> bool {
+unsafe fn check_if_window_can_be_transformed(window: &mut HWND) -> bool {
     let window_style = winuser::GetWindowLongA(window, winuser::GWL_STYLE);    
     (window_style & winuser::WS_MAXIMIZEBOX as i32) != 0
 }
 
-unsafe fn change_window_dock_position(window: &mut HWND, dock_position: Position) {
+unsafe fn get_transform_for_dock_change(window: &mut HWND, dock_position: Position) -> Option<WindowTransform> {
     let (did_window_bounds_succeed, window_bounds) = get_window_bounds(window);
     let (did_shadow_bounds_succeed, shadow_bounds) = get_shadow_bounds(window);
 
     if did_window_bounds_succeed && did_shadow_bounds_succeed {
-        let screen_transform_result = get_screen_transforms(windef::POINT{ x: window_bounds.left, y: window_bounds.top });
+        let shadow_offset_transform = get_shadow_offsets(window_bounds, shadow_bounds);
 
-        if let Ok(screen_transform) = screen_transform_result {
-            let shadow_offset_transform = get_shadow_offsets(window_bounds, shadow_bounds);
+        let initial_transform = get_initial_window_transform(&window_bounds, &shadow_bounds, &shadow_offset_transform);
 
-            let initial_transform = get_initial_window_transform(&window_bounds, &shadow_bounds, &shadow_offset_transform);
+        let avg_window_point = get_average_window_point(window_bounds);
+        let screen_transform_result = get_screen_transform(avg_window_point);
+
+        if let Ok(screen_transform) = screen_transform_result {            
+            let mut new_transform = get_transform_for_dock_position(&dock_position, screen_transform, shadow_offset_transform);
             
-            let final_transform = get_transform_for_dock_position(&dock_position, screen_transform, shadow_offset_transform);
-            
-            let did_set_transform = set_window_transform(window, initial_transform, final_transform);
+            if initial_transform == new_transform {
+                let opposite_position_option = dock_position.get_opposite_position();
 
-            if !did_set_transform {
-                let opposite_dock_position_option = dock_position.get_opposite_position();
-
-                if let Some(opposite_dock_position) = opposite_dock_position_option {
-                    
+                if let Some(opposite_position) = opposite_position_option {
+                    return get_transform_for_dock_change(window, opposite_position);
                 }
             }
+
+            return Some(new_transform);
+            // let did_set_transform = set_window_transform(window, initial_transform, final_transform);
+
+            // if !did_set_transform {
+            //     let opposite_dock_position_option = dock_position.get_opposite_position();
+
+            //     if let Some(opposite_dock_position) = opposite_dock_position_option {
+                    
+            //     }
+            // }
         }
     }
+
+    None
 }
 
 fn get_initial_window_transform(window_bounds: &RECT, shadow_bounds: &RECT, shadow_offset_transform: &WindowTransform) -> WindowTransform {
@@ -145,21 +159,32 @@ fn get_window_transform_corrections(has_shadow_offset: bool) -> WindowTransform 
     WindowTransform::new(pos_correction, 0, size_correction_x, size_correction_y)
 }
 
-unsafe fn get_screen_transforms(point: windef::POINT) -> Result<WindowTransform, ()> {
+fn get_average_window_point(window_bounds: RECT) -> windef::POINT {
+    windef::POINT {
+        x: ((window_bounds.right - window_bounds.left) / 2) + window_bounds.left,
+        y: ((window_bounds.bottom - window_bounds.top) / 2) + window_bounds.top,
+    }
+}
+
+unsafe fn get_screen_transform(point: windef::POINT) -> Result<WindowTransform, ()> {
     let monitor_info_result = get_current_monitor_info(point);
 
    if let Ok(monitor_info) = monitor_info_result {
-        let work_area: RECT = monitor_info.rcWork;
-        Ok(
-            WindowTransform::new(
-                work_area.left, 
-                work_area.top,
-                work_area.right - work_area.left,
-                work_area.bottom - work_area.top))
+        Ok(get_transform_from_monitor_info(monitor_info))
     }
     else {
         Err(())
     }
+}
+
+fn get_transform_from_monitor_info(monitor_info: winuser::MONITORINFO) -> WindowTransform {
+    let work_area: RECT = monitor_info.rcWork;
+
+    WindowTransform::new(
+        work_area.left, 
+        work_area.top,
+        work_area.right - work_area.left,
+        work_area.bottom - work_area.top)
 }
 
 unsafe fn get_current_monitor_info(point: windef::POINT) -> Result<winuser::MONITORINFO, ()> {
@@ -182,19 +207,13 @@ unsafe fn get_current_monitor_info(point: windef::POINT) -> Result<winuser::MONI
     }
 }
 
-unsafe fn set_window_transform(window: &mut HWND, initial_transform: WindowTransform, final_transform: &WindowTransform) -> bool {
-    let has_pos_x_changed = (initial_transform.pos_x - final_transform.pos_x).abs() > CHANGE_THRESHOLD;
-    let has_pos_y_changed = (initial_transform.pos_y - final_transform.pos_y).abs() > CHANGE_THRESHOLD;
-    let has_size_x_changed = (initial_transform.size_x - final_transform.size_x).abs() > CHANGE_THRESHOLD;
-    let has_size_y_changed = (initial_transform.size_y - final_transform.size_y).abs() > CHANGE_THRESHOLD;
-
-    if has_pos_x_changed || has_pos_y_changed || has_size_x_changed || has_size_y_changed {
-        winuser::SetWindowPos(window, winuser::HWND_TOP, final_transform.pos_x, final_transform.pos_y, final_transform.size_x, final_transform.size_y, winuser::SWP_SHOWWINDOW);
-        winuser::SetActiveWindow(window);
-        true
-    } else {
-        false
-    }
+unsafe fn set_window_transform(window: &mut HWND, new_transform: WindowTransform) {
+    winuser::SetWindowPos(window, winuser::HWND_TOP, new_transform.pos_x, new_transform.pos_y, new_transform.size_x, new_transform.size_y, winuser::SWP_SHOWWINDOW);
+    winuser::SetActiveWindow(window);
 }
 
-unsafe fn get_next_dock_point(final_transform: WindowTransform)
+// unsafe fn get_next_screen(dock_position: DockPosition) ->  {
+
+// }
+
+// unsafe fn get_next_dock_point(final_transform: WindowTransform, )
