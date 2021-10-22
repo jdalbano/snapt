@@ -56,15 +56,6 @@ unsafe fn get_transform_for_dock_change(window: &mut HWND, dock_position: Positi
             }
 
             return Some(new_transform);
-            // let did_set_transform = set_window_transform(window, initial_transform, final_transform);
-
-            // if !did_set_transform {
-            //     let opposite_dock_position_option = dock_position.get_opposite_position();
-
-            //     if let Some(opposite_dock_position) = opposite_dock_position_option {
-                    
-            //     }
-            // }
         }
     }
 

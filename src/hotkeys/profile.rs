@@ -8,7 +8,7 @@ enum KeyResult<'a> {
     None,
 }
 
-pub struct HotkeyProfile {
+pub struct Profile {
     left_key: Hotkey,
     right_key: Hotkey,
     top_key: Hotkey,
@@ -16,9 +16,9 @@ pub struct HotkeyProfile {
     full_key: Hotkey,
 }
 
-impl HotkeyProfile {
+impl Profile {
     pub fn new(left_keys: Vec<Keycode>, right_keys: Vec<Keycode>, top_keys: Vec<Keycode>, bottom_keys: Vec<Keycode>, full_keys: Vec<Keycode>) -> Self {
-        HotkeyProfile {
+        Profile {
             left_key: Hotkey::new(window::dock_left, left_keys),
             right_key: Hotkey::new(window::dock_right, right_keys),
             top_key: Hotkey::new(window::dock_top, top_keys),
