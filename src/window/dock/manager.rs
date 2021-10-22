@@ -44,7 +44,7 @@ unsafe fn get_transform_for_dock_change(window: &mut HWND, dock_position: Positi
         let avg_window_point = get_average_window_point(window_bounds);
         let screen_transform_result = get_screen_transform(avg_window_point);
 
-        if let Ok(screen_transform) = screen_transform_result {            
+        if let Some(screen_transform) = screen_transform_result {            
             let mut new_transform = get_transform_for_dock_position(&dock_position, screen_transform, shadow_offset_transform);
             
             if initial_transform == new_transform {
@@ -157,18 +157,19 @@ fn get_average_window_point(window_bounds: RECT) -> windef::POINT {
     }
 }
 
-unsafe fn get_screen_transform(point: windef::POINT) -> Result<WindowTransform, ()> {
+unsafe fn get_screen_transform(point: windef::POINT) -> Option<WindowTransform> {
     let monitor_info_result = get_current_monitor_info(point);
 
-   if let Ok(monitor_info) = monitor_info_result {
-        Ok(get_transform_from_monitor_info(monitor_info))
+   if let Some(monitor_info) = monitor_info_result {
+       let screen_transform = get_screen_transform_from_monitor_info(monitor_info);
+        Some(screen_transform)
     }
     else {
-        Err(())
+        None
     }
 }
 
-fn get_transform_from_monitor_info(monitor_info: winuser::MONITORINFO) -> WindowTransform {
+fn get_screen_transform_from_monitor_info(monitor_info: winuser::MONITORINFO) -> WindowTransform {
     let work_area: RECT = monitor_info.rcWork;
 
     WindowTransform::new(
@@ -178,7 +179,7 @@ fn get_transform_from_monitor_info(monitor_info: winuser::MONITORINFO) -> Window
         work_area.bottom - work_area.top)
 }
 
-unsafe fn get_current_monitor_info(point: windef::POINT) -> Result<winuser::MONITORINFO, ()> {
+unsafe fn get_current_monitor_info(point: windef::POINT) -> Option<winuser::MONITORINFO> {
     let monitor = winuser::MonitorFromPoint(point, winuser::MONITOR_DEFAULTTONEAREST);
 
     let monitor_info = &mut winuser::MONITORINFO {
@@ -191,10 +192,10 @@ unsafe fn get_current_monitor_info(point: windef::POINT) -> Result<winuser::MONI
     let did_monitor_info_succeed = winuser::GetMonitorInfoA(monitor, monitor_info);
 
     if did_monitor_info_succeed != 0 {
-        Ok(*monitor_info)
+        Some(*monitor_info)
     }
     else {
-        Err(())
+        None
     }
 }
 
