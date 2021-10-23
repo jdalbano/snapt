@@ -236,7 +236,7 @@ fn get_next_screen_condition(dock_position: &Position) -> Box<dyn Fn(RECT, &RECT
         Position::Left => Box::new(|rect: RECT, current_screen: &RECT| rect.right <= current_screen.left),
         Position::Right => Box::new(|rect: RECT, current_screen: &RECT| rect.left >= (current_screen.left + current_screen.right)),
         Position::Top => Box::new(|rect: RECT, current_screen: &RECT| rect.bottom <= current_screen.top && !(rect.left >= (current_screen.left + current_screen.right) || rect.right <= current_screen.left)),
-        Position::Bottom => Box::new(|rect: RECT, current_screen: &RECT| rect.top >= (current_screen.top + current_screen.bottom) && !(rect.left >= (current_screen.left + current_screen.top) || rect.right <= current_screen.left)),
+        Position::Bottom => Box::new(|rect: RECT, current_screen: &RECT| rect.top >= (current_screen.top + current_screen.bottom) && !(rect.left >= (current_screen.left + current_screen.right) || rect.right <= current_screen.left)),
         _ => Box::new(|_: RECT, _: &RECT| false),
     }
 }
