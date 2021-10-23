@@ -403,5 +403,9 @@ FodyWeavers.xsd
 # JetBrains Rider
 .idea/
 *.sln.iml
+
 installer/readme.url
 installer/readme_html.txt
+backup/
+releases/
+.vscode/
