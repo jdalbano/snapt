@@ -41,17 +41,17 @@ fn get_full_hotkey_default() -> Vec<Keycode> {
 }
 
 fn get_top_left_hotkey_default() -> Vec<Keycode> {
-    vec!(Keycode::LControl, Keycode::LAlt, Keycode::Key1)
+    vec!(Keycode::LControl, Keycode::LAlt, Keycode::Numpad1)
 }
 
 fn get_top_right_hotkey_default() -> Vec<Keycode> {
-    vec!(Keycode::LControl, Keycode::LAlt, Keycode::Key2)
+    vec!(Keycode::LControl, Keycode::LAlt, Keycode::Numpad2)
 }
 
 fn get_bottom_left_hotkey_default() -> Vec<Keycode> {
-    vec!(Keycode::LControl, Keycode::LAlt, Keycode::Key3)
+    vec!(Keycode::LControl, Keycode::LAlt, Keycode::Numpad3)
 }
 
 fn get_bottom_right_hotkey_default() -> Vec<Keycode> {
-    vec!(Keycode::LControl, Keycode::LAlt, Keycode::Key4)
+    vec!(Keycode::LControl, Keycode::LAlt, Keycode::Numpad4)
 }
