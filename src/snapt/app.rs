@@ -1,7 +1,5 @@
 use std::io::Error;
 
-use device_query::{DeviceQuery, DeviceState, Keycode};
-
 use crate::snapt::control;
 use crate::snapt::interface;
 use crate::snapt::interface::Interface;
@@ -20,6 +18,8 @@ impl App {
         let interface_result = self.start_app_interface();
 
         if let Ok(interface) = interface_result {
+            hotkeys::start_monitoring_keys();
+
             self.main_loop(&interface);
 
             self.end_app_interface(interface);
@@ -27,8 +27,6 @@ impl App {
     }
 
     fn main_loop(&self, interface: &Interface) {
-        self.start_monitoring_keys();
-
         loop {
             if control::get_do_exit() {
                 break;
@@ -40,24 +38,6 @@ impl App {
                 break;
             }
         }
-    }
-
-    fn start_monitoring_keys(&self) {
-        std::thread::spawn(|| {
-            let device_state = DeviceState::new();
-            let hotkey_profile = &hotkeys::hotkey_loader::load_hotkey_profile();
-            
-            loop {
-                if control::get_do_exit() {
-                    break;
-                }
-
-                if !control::get_do_pause() {
-                    let keys: Vec<Keycode> = device_state.get_keys();
-                    let _did_process = hotkey_profile.process_incoming_keys(&keys);   
-                }
-            }
-        });
     }
 
     fn start_app_interface(&mut self) -> Result<Interface, Error> {

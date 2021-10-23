@@ -1,13 +1,13 @@
 use device_query::Keycode;
 
-use crate::hotkeys::hotkey_profile::*;
+use crate::hotkeys::profile::*;
 
-pub fn load_hotkey_profile() -> HotkeyProfile {
+pub fn load_hotkey_profile() -> Profile {
     load_default_hotkey_profile()
 }
 
-fn load_default_hotkey_profile() -> HotkeyProfile {
-    HotkeyProfile::new(
+fn load_default_hotkey_profile() -> Profile {
+    Profile::new(
         get_left_hotkey_default(),
         get_right_hotkey_default(),
         get_top_hotkey_default(),
