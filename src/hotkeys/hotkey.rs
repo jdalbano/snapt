@@ -22,8 +22,7 @@ impl Hotkey {
     pub fn check_if_keys_match(&self, keys: &Vec<Keycode>) -> bool {
         if keys.len() != self.key_combination.len() {
             false
-        }
-        else {
+        } else {
             self.key_combination.iter().all(|key| keys.contains(key))
         }
     }

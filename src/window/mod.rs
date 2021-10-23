@@ -1,4 +1,5 @@
 mod dock;
+mod monitor;
 mod window_transform;
 
 use dock::position::Position as DockPosition;

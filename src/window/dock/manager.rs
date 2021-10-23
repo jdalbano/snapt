@@ -4,8 +4,9 @@ use winapi::shared::minwindef;
 use winapi::shared::windef;
 use winapi::um::winuser;
 
-use crate::window::window_transform::*;
 use crate::window::dock::position::*;
+use crate::window::monitor::info::Info as MonitorInfo;
+use crate::window::window_transform::*;
 
 type HWND = windef::HWND__;
 type RECT = windef::RECT;
@@ -45,13 +46,21 @@ unsafe fn get_transform_for_dock_change(window: &mut HWND, dock_position: Positi
         let screen_transform_result = get_screen_transform(avg_window_point);
 
         if let Some(screen_transform) = screen_transform_result {            
-            let mut new_transform = get_transform_for_dock_position(&dock_position, screen_transform, shadow_offset_transform);
+            let mut new_transform = get_transform_for_dock_position(&dock_position, screen_transform, &shadow_offset_transform);
             
             if initial_transform == new_transform {
                 let opposite_position_option = dock_position.get_opposite_position();
 
                 if let Some(opposite_position) = opposite_position_option {
-                    return get_transform_for_dock_change(window, opposite_position);
+                    let next_screen_point_option = get_point_on_next_screen_for_transform(&new_transform, &dock_position);
+
+                    if let Some(next_screen_point) = next_screen_point_option {
+                        let next_screen_transform_option = get_screen_transform(next_screen_point);
+    
+                        if let Some(next_screen_transform) = next_screen_transform_option {
+                            new_transform = get_transform_for_dock_position(&opposite_position, next_screen_transform, &shadow_offset_transform)
+                        }
+                    }
                 }
             }
 
@@ -103,7 +112,7 @@ fn get_shadow_offsets(window_rect: RECT, shadow_rect: RECT) -> WindowTransform {
         window_rect.bottom - shadow_rect.bottom - pos_y)
 }
 
-fn get_transform_for_dock_position(dock_position: &Position, screen_transform: WindowTransform, shadow_offset_transform: WindowTransform) -> WindowTransform  {
+fn get_transform_for_dock_position(dock_position: &Position, screen_transform: WindowTransform, shadow_offset_transform: &WindowTransform) -> WindowTransform  {
     let transform_correction = get_window_transform_corrections(shadow_offset_transform.pos_x != 0);
     
     let half_size_x = screen_transform.size_x / 2;
@@ -158,13 +167,12 @@ fn get_average_window_point(window_bounds: RECT) -> windef::POINT {
 }
 
 unsafe fn get_screen_transform(point: windef::POINT) -> Option<WindowTransform> {
-    let monitor_info_result = get_current_monitor_info(point);
+    let monitor_info_result = get_monitor_containing_point(point);
 
    if let Some(monitor_info) = monitor_info_result {
        let screen_transform = get_screen_transform_from_monitor_info(monitor_info);
         Some(screen_transform)
-    }
-    else {
+    } else {
         None
     }
 }
@@ -179,7 +187,7 @@ fn get_screen_transform_from_monitor_info(monitor_info: winuser::MONITORINFO) ->
         work_area.bottom - work_area.top)
 }
 
-unsafe fn get_current_monitor_info(point: windef::POINT) -> Option<winuser::MONITORINFO> {
+unsafe fn get_monitor_containing_point(point: windef::POINT) -> Option<winuser::MONITORINFO> {
     let monitor = winuser::MonitorFromPoint(point, winuser::MONITOR_DEFAULTTONEAREST);
 
     let monitor_info = &mut winuser::MONITORINFO {
@@ -193,8 +201,7 @@ unsafe fn get_current_monitor_info(point: windef::POINT) -> Option<winuser::MONI
 
     if did_monitor_info_succeed != 0 {
         Some(*monitor_info)
-    }
-    else {
+    } else {
         None
     }
 }
@@ -204,8 +211,32 @@ unsafe fn set_window_transform(window: &mut HWND, new_transform: WindowTransform
     winuser::SetActiveWindow(window);
 }
 
-// unsafe fn get_next_screen(dock_position: DockPosition) ->  {
+unsafe fn get_point_on_next_screen_for_transform(current_transform: &WindowTransform, dock_position: &Position) -> Option<windef::POINT> {
+    let mut info = MonitorInfo::new();
+    info.prepare_monitor_info();
 
-// }
 
-// unsafe fn get_next_dock_point(final_transform: WindowTransform, )
+    if let Some(monitor_rects) = info.monitor_rects {
+        let next_mon_criteria: Box<dyn Fn(RECT) -> bool> = 
+            match dock_position {
+                Position::Left => Box::new(|rect: RECT| rect.right <= current_transform.pos_x),
+                Position::Right => Box::new(|rect: RECT| rect.left >= (current_transform.pos_x + current_transform.size_x)),
+                Position::Top => Box::new(|rect: RECT| rect.bottom <= current_transform.pos_y && !(rect.left >= (current_transform.pos_x + current_transform.size_x) || rect.right <= current_transform.pos_x)),
+                Position::Bottom => Box::new(|rect: RECT| rect.top >= (current_transform.pos_y + current_transform.size_y) && !(rect.left >= (current_transform.pos_x + current_transform.pos_y) || rect.right <= current_transform.pos_x)),
+                _ => Box::new(|_: RECT| false),
+            };
+
+            let candidate_monitors = monitor_rects.into_iter().filter(|rect| next_mon_criteria(*rect)).collect::<Vec<RECT>>();            
+
+            if candidate_monitors.len() > 0 {
+                let next_screen = candidate_monitors[0];
+
+                print!("x = {}, y = {}", next_screen.left, next_screen.top);
+                return Some(windef::POINT { x: next_screen.left, y: next_screen.top});
+            } else {
+                
+            }
+    }
+
+    None
+}

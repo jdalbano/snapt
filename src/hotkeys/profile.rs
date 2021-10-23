@@ -33,8 +33,7 @@ impl Profile {
         if let KeyResult::Some(key) = matching_key {
             key.execute_callback();
             true
-        }
-        else {
+        } else {
             false
         }
     }
@@ -45,8 +44,7 @@ impl Profile {
 
         if let Option::Some(key) = matching_key {
             KeyResult::Some(key)
-        }
-        else {
+        } else {
             KeyResult::None
         }
     }
