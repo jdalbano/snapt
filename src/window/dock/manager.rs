@@ -46,19 +46,20 @@ unsafe fn get_transform_for_dock_change(window: &mut HWND, dock_position: Positi
         let screen_transform_result = get_screen_transform(avg_window_point);
 
         if let Some(screen_transform) = screen_transform_result {            
-            let mut new_transform = get_transform_for_dock_position(&dock_position, screen_transform, &shadow_offset_transform);
+            let mut new_transform = get_transform_for_dock_position(&dock_position, &screen_transform, &shadow_offset_transform);
             
             if initial_transform == new_transform {
                 let opposite_position_option = dock_position.get_opposite_position();
 
                 if let Some(opposite_position) = opposite_position_option {
-                    let next_screen_point_option = get_point_on_next_screen_for_transform(&new_transform, &dock_position);
+                    let current_screen = screen_transform.convert_to_rect();
+                    let next_screen_point_option = get_point_on_next_screen_for_transform(current_screen, &dock_position);
 
                     if let Some(next_screen_point) = next_screen_point_option {
                         let next_screen_transform_option = get_screen_transform(next_screen_point);
     
                         if let Some(next_screen_transform) = next_screen_transform_option {
-                            new_transform = get_transform_for_dock_position(&opposite_position, next_screen_transform, &shadow_offset_transform)
+                            new_transform = get_transform_for_dock_position(&opposite_position, &next_screen_transform, &shadow_offset_transform)
                         }
                     }
                 }
@@ -112,7 +113,7 @@ fn get_shadow_offsets(window_rect: RECT, shadow_rect: RECT) -> WindowTransform {
         window_rect.bottom - shadow_rect.bottom - pos_y)
 }
 
-fn get_transform_for_dock_position(dock_position: &Position, screen_transform: WindowTransform, shadow_offset_transform: &WindowTransform) -> WindowTransform  {
+fn get_transform_for_dock_position(dock_position: &Position, screen_transform: &WindowTransform, shadow_offset_transform: &WindowTransform) -> WindowTransform  {
     let transform_correction = get_window_transform_corrections(shadow_offset_transform.pos_x != 0);
     
     let half_size_x = screen_transform.size_x / 2;
@@ -211,59 +212,51 @@ unsafe fn set_window_transform(window: &mut HWND, new_transform: WindowTransform
     winuser::SetActiveWindow(window);
 }
 
-unsafe fn get_point_on_next_screen_for_transform(current_transform: &WindowTransform, dock_position: &Position) -> Option<windef::POINT> {
+unsafe fn get_point_on_next_screen_for_transform(current_screen: RECT, dock_position: &Position) -> Option<windef::POINT> {
     let mut info = MonitorInfo::new();
     info.prepare_monitor_info();
 
     if let Some(monitor_rects) = &info.monitor_rects {
         let next_mon_condition = get_next_screen_condition(dock_position);
-        let candidate_monitors = monitor_rects.into_iter().filter(|rect| next_mon_condition(**rect, current_transform)).collect::<Vec<&RECT>>();            
+        let candidate_monitors = monitor_rects.into_iter().filter(|rect| next_mon_condition(**rect, &current_screen)).collect::<Vec<&RECT>>();            
 
         if candidate_monitors.len() > 0 {
             let next_screen = candidate_monitors[0];
             return Some(windef::POINT { x: next_screen.left, y: next_screen.top});
         } else {
-            return Some(get_next_wrapped_screen_point(info, current_transform, dock_position));
+            return Some(get_next_wrapped_screen_point(info, current_screen, dock_position));
         }
     }
 
     None
 }
 
-fn get_next_screen_condition(dock_position: &Position) -> Box<dyn Fn(RECT, &WindowTransform) -> bool> {
+fn get_next_screen_condition(dock_position: &Position) -> Box<dyn Fn(RECT, &RECT) -> bool> {
     match dock_position {
-        Position::Left => Box::new(|rect: RECT, current_transform: &WindowTransform| rect.right <= current_transform.pos_x),
-        Position::Right => Box::new(|rect: RECT, current_transform: &WindowTransform| rect.left >= (current_transform.pos_x + current_transform.size_x)),
-        Position::Top => Box::new(|rect: RECT, current_transform: &WindowTransform| rect.bottom <= current_transform.pos_y && !(rect.left >= (current_transform.pos_x + current_transform.size_x) || rect.right <= current_transform.pos_x)),
-        Position::Bottom => Box::new(|rect: RECT, current_transform: &WindowTransform| rect.top >= (current_transform.pos_y + current_transform.size_y) && !(rect.left >= (current_transform.pos_x + current_transform.pos_y) || rect.right <= current_transform.pos_x)),
-        _ => Box::new(|_: RECT, _: &WindowTransform| false),
+        Position::Left => Box::new(|rect: RECT, current_screen: &RECT| rect.right <= current_screen.left),
+        Position::Right => Box::new(|rect: RECT, current_screen: &RECT| rect.left >= (current_screen.left + current_screen.right)),
+        Position::Top => Box::new(|rect: RECT, current_screen: &RECT| rect.bottom <= current_screen.top && !(rect.left >= (current_screen.left + current_screen.right) || rect.right <= current_screen.left)),
+        Position::Bottom => Box::new(|rect: RECT, current_screen: &RECT| rect.top >= (current_screen.top + current_screen.bottom) && !(rect.left >= (current_screen.left + current_screen.top) || rect.right <= current_screen.left)),
+        _ => Box::new(|_: RECT, _: &RECT| false),
     }
 }
 
-fn get_next_wrapped_screen_point(monitor_info: MonitorInfo, current_transform: &WindowTransform, dock_position: &Position) -> windef::POINT {
+fn get_next_wrapped_screen_point(monitor_info: MonitorInfo, current_screen: RECT, dock_position: &Position) -> windef::POINT {
     let opposite_position_option = dock_position.get_opposite_position();
 
-    let mut next_wrapped_screen_point = windef::POINT { x: current_transform.pos_x, y: current_transform.pos_y };
+    let mut next_wrapped_screen = &current_screen;
 
     if let Some(opposite_position) = opposite_position_option {
         let wrapped_mon_condition = get_next_screen_condition(&opposite_position);
     
-        if let Some(monitor_rects) = monitor_info.monitor_rects {
-            for (i, rect) in monitor_rects.iter().enumerate() {
-                if i == 0 {
-                    if wrapped_mon_condition(*rect, current_transform) {
-                        next_wrapped_screen_point.x = rect.left;
-                        next_wrapped_screen_point.y = rect.top;
-                    }
-                } else {
-                    if wrapped_mon_condition(*rect, current_transform) {
-                        next_wrapped_screen_point.x = rect.left;
-                        next_wrapped_screen_point.y = rect.top;
-                    }
+        if let Some(monitor_rects) = &monitor_info.monitor_rects {
+            for (_, rect) in monitor_rects.iter().enumerate() {
+                if wrapped_mon_condition(*rect, &next_wrapped_screen) {
+                    next_wrapped_screen = rect;
                 }
             }
         }
     }
 
-    next_wrapped_screen_point
+    windef::POINT { x: next_wrapped_screen.left, y: next_wrapped_screen.top }
 }
