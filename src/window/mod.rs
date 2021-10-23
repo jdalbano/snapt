@@ -23,3 +23,18 @@ pub fn dock_bottom(){
 pub fn dock_full(){
     dock::manager::process_window_dock_change(DockPosition::Full);
 }
+
+pub fn dock_top_left() {
+    dock::manager::process_window_dock_change(DockPosition::TopLeft);
+}
+
+pub fn dock_top_right(){
+    dock::manager::process_window_dock_change(DockPosition::TopRight);
+}
+pub fn dock_bottom_left() {
+    dock::manager::process_window_dock_change(DockPosition::BottomLeft);
+}
+
+pub fn dock_bottom_right(){
+    dock::manager::process_window_dock_change(DockPosition::BottomRight);
+}

@@ -5,6 +5,10 @@ pub enum Position {
     Top,
     Bottom,
     Full,
+    TopLeft,
+    TopRight,
+    BottomLeft,
+    BottomRight,
 }
 
 impl std::fmt::Display for Position {
@@ -16,6 +20,10 @@ impl std::fmt::Display for Position {
                 Position::Top => "Top",
                 Position::Bottom => "Bottom",
                 Position::Full => "Full",
+                Position::TopLeft => "TopLeft",
+                Position::TopRight => "TopRight",
+                Position::BottomLeft => "BottomLeft",
+                Position::BottomRight => "BottomRight",
             })
     }
 }

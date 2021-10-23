@@ -14,16 +14,33 @@ pub struct Profile {
     top_key: Hotkey,
     bottom_key: Hotkey,
     full_key: Hotkey,
+    top_left_key: Hotkey,
+    top_right_key: Hotkey,
+    bottom_left_key: Hotkey,
+    bottom_right_key: Hotkey,
 }
 
 impl Profile {
-    pub fn new(left_keys: Vec<Keycode>, right_keys: Vec<Keycode>, top_keys: Vec<Keycode>, bottom_keys: Vec<Keycode>, full_keys: Vec<Keycode>) -> Self {
+    pub fn new(
+        left_keys: Vec<Keycode>, 
+        right_keys: Vec<Keycode>, 
+        top_keys: Vec<Keycode>, 
+        bottom_keys: Vec<Keycode>, 
+        full_keys: Vec<Keycode>, 
+        top_left_keys: Vec<Keycode>, 
+        top_right_keys: Vec<Keycode>, 
+        bottom_left_keys: Vec<Keycode>, 
+        bottom_right_keys: Vec<Keycode>) -> Self {
         Profile {
             left_key: Hotkey::new(window::dock_left, left_keys),
             right_key: Hotkey::new(window::dock_right, right_keys),
             top_key: Hotkey::new(window::dock_top, top_keys),
             bottom_key: Hotkey::new(window::dock_bottom, bottom_keys),
             full_key: Hotkey::new(window::dock_full, full_keys),
+            top_left_key: Hotkey::new(window::dock_top_left, top_left_keys),
+            top_right_key: Hotkey::new(window::dock_top_right, top_right_keys),
+            bottom_left_key: Hotkey::new(window::dock_bottom_left, bottom_left_keys),
+            bottom_right_key: Hotkey::new(window::dock_bottom_right, bottom_right_keys),
         }
     }
 
@@ -50,6 +67,15 @@ impl Profile {
     }
 
     fn get_all_keys(&self) -> Vec<&Hotkey> {
-        vec!(&self.left_key, &self.right_key, &self.top_key, &self.bottom_key, &self.full_key)
+        vec!(
+            &self.left_key,
+            &self.right_key,
+            &self.top_key,
+            &self.bottom_key,
+            &self.full_key,
+            &self.top_left_key,
+            &self.top_right_key,
+            &self.bottom_left_key,
+            &self.bottom_right_key)
     }
 }

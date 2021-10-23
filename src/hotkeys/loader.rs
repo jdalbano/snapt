@@ -13,6 +13,10 @@ fn load_default_hotkey_profile() -> Profile {
         get_top_hotkey_default(),
         get_bottom_hotkey_default(),
         get_full_hotkey_default(),
+        get_top_left_hotkey_default(),
+        get_top_right_hotkey_default(),
+        get_bottom_left_hotkey_default(),
+        get_bottom_right_hotkey_default(),
     )
 }
 
@@ -34,4 +38,20 @@ fn get_bottom_hotkey_default() -> Vec<Keycode> {
 
 fn get_full_hotkey_default() -> Vec<Keycode> {
     vec!(Keycode::LControl, Keycode::LAlt, Keycode::Space)
+}
+
+fn get_top_left_hotkey_default() -> Vec<Keycode> {
+    vec!(Keycode::LControl, Keycode::LAlt, Keycode::Numpad1)
+}
+
+fn get_top_right_hotkey_default() -> Vec<Keycode> {
+    vec!(Keycode::LControl, Keycode::LAlt, Keycode::Numpad2)
+}
+
+fn get_bottom_left_hotkey_default() -> Vec<Keycode> {
+    vec!(Keycode::LControl, Keycode::LAlt, Keycode::Numpad3)
+}
+
+fn get_bottom_right_hotkey_default() -> Vec<Keycode> {
+    vec!(Keycode::LControl, Keycode::LAlt, Keycode::Numpad4)
 }
