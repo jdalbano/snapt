@@ -121,30 +121,50 @@ fn get_transform_for_dock_position(dock_position: &Position, screen_transform: &
 
     match dock_position {
         Position::Left => WindowTransform::new(
-            screen_transform.pos_x + shadow_offset_transform.pos_x + transform_correction.pos_x, 
-            screen_transform.pos_y + shadow_offset_transform.pos_y, 
-            half_size_x + shadow_offset_transform.size_x + transform_correction.size_x * 2, 
+            screen_transform.pos_x + shadow_offset_transform.pos_x + transform_correction.pos_x,
+            screen_transform.pos_y + shadow_offset_transform.pos_y,
+            half_size_x + shadow_offset_transform.size_x + transform_correction.size_x * 2,
             screen_transform.size_y + shadow_offset_transform.size_y + transform_correction.size_y),
         Position::Right => WindowTransform::new(
-            screen_transform.pos_x + half_size_x + shadow_offset_transform.pos_x, 
-            screen_transform.pos_y + shadow_offset_transform.pos_y, 
-            half_size_x + shadow_offset_transform.size_x + transform_correction.size_x, 
+            screen_transform.pos_x + half_size_x + shadow_offset_transform.pos_x,
+            screen_transform.pos_y + shadow_offset_transform.pos_y,
+            half_size_x + shadow_offset_transform.size_x + transform_correction.size_x,
             screen_transform.size_y + shadow_offset_transform.size_y + transform_correction.size_y),
         Position::Top => WindowTransform::new(
-            screen_transform.pos_x + shadow_offset_transform.pos_x + transform_correction.pos_x, 
-            screen_transform.pos_y + shadow_offset_transform.pos_y, 
-            screen_transform.size_x + shadow_offset_transform.size_x + transform_correction.size_x * 2, 
+            screen_transform.pos_x + shadow_offset_transform.pos_x + transform_correction.pos_x,
+            screen_transform.pos_y + shadow_offset_transform.pos_y,
+            screen_transform.size_x + shadow_offset_transform.size_x + transform_correction.size_x * 2,
             half_size_y + shadow_offset_transform.size_y + transform_correction.size_y),
         Position::Bottom => WindowTransform::new(
-            screen_transform.pos_x + shadow_offset_transform.pos_x + transform_correction.pos_x, 
-            screen_transform.pos_y + half_size_y + shadow_offset_transform.pos_y, 
-            screen_transform.size_x + shadow_offset_transform.size_x + transform_correction.size_x * 2, 
+            screen_transform.pos_x + shadow_offset_transform.pos_x + transform_correction.pos_x,
+            screen_transform.pos_y + half_size_y + shadow_offset_transform.pos_y,
+            screen_transform.size_x + shadow_offset_transform.size_x + transform_correction.size_x * 2,
             half_size_y + shadow_offset_transform.size_y + transform_correction.size_y),
         Position::Full => WindowTransform::new(
-            screen_transform.pos_x + shadow_offset_transform.pos_x + transform_correction.pos_x, 
-            screen_transform.pos_y + shadow_offset_transform.pos_y, 
-            screen_transform.size_x + shadow_offset_transform.size_x + transform_correction.size_x * 2, 
+            screen_transform.pos_x + shadow_offset_transform.pos_x + transform_correction.pos_x,
+            screen_transform.pos_y + shadow_offset_transform.pos_y,
+            screen_transform.size_x + shadow_offset_transform.size_x + transform_correction.size_x * 2,
             screen_transform.size_y + shadow_offset_transform.size_y + transform_correction.size_y),
+        Position::TopLeft => WindowTransform::new(
+            screen_transform.pos_x + shadow_offset_transform.pos_x + transform_correction.pos_x,
+            screen_transform.pos_y + shadow_offset_transform.pos_y,
+            half_size_x + shadow_offset_transform.size_x + transform_correction.size_x * 2,
+            half_size_y + shadow_offset_transform.size_y + transform_correction.size_y),
+        Position::TopRight => WindowTransform::new(
+            screen_transform.pos_x + half_size_x + shadow_offset_transform.pos_x,
+            screen_transform.pos_y + shadow_offset_transform.pos_y,
+            half_size_x + shadow_offset_transform.size_x + transform_correction.size_x,
+            half_size_y + shadow_offset_transform.size_y + transform_correction.size_y),
+        Position::BottomLeft => WindowTransform::new(
+            screen_transform.pos_x + shadow_offset_transform.pos_x + transform_correction.pos_x,
+            screen_transform.pos_y + half_size_y + shadow_offset_transform.pos_y,
+            half_size_x + shadow_offset_transform.size_x + transform_correction.size_x * 2,
+            half_size_y + shadow_offset_transform.size_y + transform_correction.size_y),
+        Position::BottomRight => WindowTransform::new(
+            screen_transform.pos_x + half_size_x + shadow_offset_transform.pos_x,
+            screen_transform.pos_y + half_size_y + shadow_offset_transform.pos_y,
+            half_size_x + shadow_offset_transform.size_x + transform_correction.size_x,
+            half_size_y + shadow_offset_transform.size_y + transform_correction.size_y),
     }
 }
 
