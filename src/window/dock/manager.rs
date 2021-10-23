@@ -215,28 +215,55 @@ unsafe fn get_point_on_next_screen_for_transform(current_transform: &WindowTrans
     let mut info = MonitorInfo::new();
     info.prepare_monitor_info();
 
+    if let Some(monitor_rects) = &info.monitor_rects {
+        let next_mon_condition = get_next_screen_condition(dock_position);
+        let candidate_monitors = monitor_rects.into_iter().filter(|rect| next_mon_condition(**rect, current_transform)).collect::<Vec<&RECT>>();            
 
-    if let Some(monitor_rects) = info.monitor_rects {
-        let next_mon_criteria: Box<dyn Fn(RECT) -> bool> = 
-            match dock_position {
-                Position::Left => Box::new(|rect: RECT| rect.right <= current_transform.pos_x),
-                Position::Right => Box::new(|rect: RECT| rect.left >= (current_transform.pos_x + current_transform.size_x)),
-                Position::Top => Box::new(|rect: RECT| rect.bottom <= current_transform.pos_y && !(rect.left >= (current_transform.pos_x + current_transform.size_x) || rect.right <= current_transform.pos_x)),
-                Position::Bottom => Box::new(|rect: RECT| rect.top >= (current_transform.pos_y + current_transform.size_y) && !(rect.left >= (current_transform.pos_x + current_transform.pos_y) || rect.right <= current_transform.pos_x)),
-                _ => Box::new(|_: RECT| false),
-            };
-
-            let candidate_monitors = monitor_rects.into_iter().filter(|rect| next_mon_criteria(*rect)).collect::<Vec<RECT>>();            
-
-            if candidate_monitors.len() > 0 {
-                let next_screen = candidate_monitors[0];
-
-                print!("x = {}, y = {}", next_screen.left, next_screen.top);
-                return Some(windef::POINT { x: next_screen.left, y: next_screen.top});
-            } else {
-                
-            }
+        if candidate_monitors.len() > 0 {
+            let next_screen = candidate_monitors[0];
+            return Some(windef::POINT { x: next_screen.left, y: next_screen.top});
+        } else {
+            return Some(get_next_wrapped_screen_point(info, current_transform, dock_position));
+        }
     }
 
     None
+}
+
+fn get_next_screen_condition(dock_position: &Position) -> Box<dyn Fn(RECT, &WindowTransform) -> bool> {
+    match dock_position {
+        Position::Left => Box::new(|rect: RECT, current_transform: &WindowTransform| rect.right <= current_transform.pos_x),
+        Position::Right => Box::new(|rect: RECT, current_transform: &WindowTransform| rect.left >= (current_transform.pos_x + current_transform.size_x)),
+        Position::Top => Box::new(|rect: RECT, current_transform: &WindowTransform| rect.bottom <= current_transform.pos_y && !(rect.left >= (current_transform.pos_x + current_transform.size_x) || rect.right <= current_transform.pos_x)),
+        Position::Bottom => Box::new(|rect: RECT, current_transform: &WindowTransform| rect.top >= (current_transform.pos_y + current_transform.size_y) && !(rect.left >= (current_transform.pos_x + current_transform.pos_y) || rect.right <= current_transform.pos_x)),
+        _ => Box::new(|_: RECT, _: &WindowTransform| false),
+    }
+}
+
+fn get_next_wrapped_screen_point(monitor_info: MonitorInfo, current_transform: &WindowTransform, dock_position: &Position) -> windef::POINT {
+    let opposite_position_option = dock_position.get_opposite_position();
+
+    let mut next_wrapped_screen_point = windef::POINT { x: current_transform.pos_x, y: current_transform.pos_y };
+
+    if let Some(opposite_position) = opposite_position_option {
+        let wrapped_mon_condition = get_next_screen_condition(&opposite_position);
+    
+        if let Some(monitor_rects) = monitor_info.monitor_rects {
+            for (i, rect) in monitor_rects.iter().enumerate() {
+                if i == 0 {
+                    if wrapped_mon_condition(*rect, current_transform) {
+                        next_wrapped_screen_point.x = rect.left;
+                        next_wrapped_screen_point.y = rect.top;
+                    }
+                } else {
+                    if wrapped_mon_condition(*rect, current_transform) {
+                        next_wrapped_screen_point.x = rect.left;
+                        next_wrapped_screen_point.y = rect.top;
+                    }
+                }
+            }
+        }
+    }
+
+    next_wrapped_screen_point
 }
