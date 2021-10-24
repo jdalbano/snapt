@@ -404,6 +404,7 @@ FodyWeavers.xsd
 .idea/
 *.sln.iml
 
+installer/eula.rtf
 installer/readme.url
 installer/readme_html.txt
 backup/
