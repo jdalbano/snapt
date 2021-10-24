@@ -15,4 +15,4 @@ embed-resource = "1.4"
 
 [dependencies]
 device_query = "0.2.8"
-winapi = { version = "0.3.9", features = ["winuser", "errhandlingapi", "dwmapi", "wincon", "shellapi", "libloaderapi", "commctrl"] }
+winapi = { version = "0.3.9", features = ["winuser", "errhandlingapi", "dwmapi", "wincon", "shellapi", "libloaderapi", "commctrl", "synchapi", "winerror"] }

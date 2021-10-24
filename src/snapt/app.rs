@@ -3,6 +3,7 @@ use std::io::Error;
 use crate::snapt::control;
 use crate::snapt::interface;
 use crate::snapt::interface::Interface;
+use crate::snapt::registration;
 use crate::hotkeys;
 
 pub const APP_NAME: &str = "Snapt";
@@ -15,14 +16,18 @@ impl App {
     }
 
     pub fn run(&mut self) {
-        let interface_result = self.start_app_interface();
+        let did_register = registration::register_app_instance();
 
-        if let Ok(interface) = interface_result {
-            hotkeys::start_monitoring_keys();
-
-            self.main_loop(&interface);
-
-            self.end_app_interface(interface);
+        if did_register {
+            let interface_result = self.start_app_interface();
+    
+            if let Ok(interface) = interface_result {
+                hotkeys::start_monitoring_keys();
+    
+                self.main_loop(&interface);
+    
+                self.end_app_interface(interface);
+            }
         }
     }
 
