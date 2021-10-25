@@ -27,6 +27,12 @@ pub struct PrimaryInterface {
 }
 
 impl PrimaryInterface {
+    pub fn new() -> Self {
+        unsafe {
+            try_create_interface().expect("failed to create primary interface")
+        }
+    }
+
     fn bind_interface_to_window(&mut self) {
         unsafe {
             winuser::SetWindowLongPtrW(self.window, winuser::GWLP_USERDATA, (self as *mut PrimaryInterface) as isize);
@@ -75,12 +81,6 @@ impl PrimaryInterface {
 }
 
 impl InterfaceBase for PrimaryInterface {
-    fn new() -> Self {
-        unsafe {
-            try_create_interface().expect("failed to create primary interface")
-        }
-    }
-
     fn init(&mut self){
         self.bind_interface_to_window();
         self.add_notification();

@@ -1,5 +1,4 @@
 pub trait InterfaceBase {
-    fn new() -> Self;
     fn init(&mut self);   
     fn check_should_close(&self) -> bool; 
     fn handle_messages(&self) -> bool;
