@@ -1,3 +1,6 @@
+pub mod notification;
+pub mod window;
+
 use std::ffi::{OsStr};
 use std::io::Error;
 use std::mem;

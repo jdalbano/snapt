@@ -1,8 +1,7 @@
 use std::io::Error;
 
 use crate::snapt::control;
-use crate::snapt::interface;
-use crate::snapt::interface::Interface;
+use crate::snapt::interface::base as base_interface;
 use crate::snapt::registration;
 use crate::hotkeys;
 
@@ -31,7 +30,7 @@ impl App {
         }
     }
 
-    fn main_loop(&self, interface: &Interface) {
+    fn main_loop(&self, interface: &base_interface::Interface) {
         loop {
             if control::get_do_exit() {
                 break;
@@ -45,21 +44,21 @@ impl App {
         }
     }
 
-    fn start_app_interface(&mut self) -> Result<Interface, Error> {
+    fn start_app_interface(&mut self) -> Result<base_interface::Interface, Error> {
         unsafe {
-            interface::create_app_interface(self as *mut App)
+            base_interface::create_app_interface(self as *mut App)
         }
     }    
     
-    fn end_app_interface(&self, interface: Interface) {
+    fn end_app_interface(&self, interface: base_interface::Interface) {
         unsafe {
-            interface::destroy_app_interface(interface);
+            base_interface::destroy_app_interface(interface);
         }
     }
 
-    fn handle_interface_messages(&self, instance: &Interface) -> bool {
+    fn handle_interface_messages(&self, instance: &base_interface::Interface) -> bool {
         unsafe {
-            interface::handle_messages(instance.window)
+            base_interface::handle_messages(instance.window)
         }
     }
 }
