@@ -10,7 +10,6 @@ use winapi::shared::windef;
 
 use crate::snapt::app;
 use crate::snapt::app::App;
-use crate::snapt::control;
 use crate::snapt::resources;
 
 use crate::snapt::interface::base::InterfaceBase;
@@ -59,17 +58,17 @@ impl PrimaryInterface {
     }
 
     fn pause_app(&mut self) {
-        control::pause_app();
+        app::pause_app();
         self.modify_notification(get_tooltip(true));
     }
 
     fn resume_app(&mut self) {
-        control::resume_app();
+        app::resume_app();
         self.modify_notification(get_tooltip(false));
     }
 
     fn exit_app(&self) {
-        control::exit_app();
+        app::exit_app();
     }
 
     fn modify_notification(&mut self, new_tooltip: [u16; 128]) {
@@ -87,7 +86,7 @@ impl InterfaceBase for PrimaryInterface {
     }   
 
     fn check_should_close(&self) -> bool {
-        control::get_do_exit()
+        app::get_do_exit()
     }
 
     fn handle_messages(&self) -> bool {
@@ -249,7 +248,7 @@ unsafe fn show_context_menu(hwnd: windef::HWND, point: windef::POINT)
             let app_instance_option = (winuser::GetWindowLongPtrW(hwnd, winuser::GWLP_USERDATA) as *mut App).as_mut();
 
             if let Some(_) = app_instance_option {
-                let command_to_remove = if control::get_do_pause() { resources::IDM_PAUSE } else { resources::IDM_RESUME };
+                let command_to_remove = if app::get_do_pause() { resources::IDM_PAUSE } else { resources::IDM_RESUME };
                 winuser::RemoveMenu(submenu, command_to_remove as u32, winuser::MF_BYCOMMAND);
 
                 winuser::SetForegroundWindow(hwnd);                
