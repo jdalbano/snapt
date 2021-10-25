@@ -5,5 +5,5 @@ mod snapt;
 mod window;
 
 fn main() {
-    snapt::run();
+    snapt::app::run();
 }

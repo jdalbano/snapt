@@ -12,7 +12,7 @@ impl WindowTransform {
         WindowTransform { pos_x, pos_y, size_x, size_y }
     }
 
-    pub fn convert_to_rect(&self) -> RECT {
+    pub fn to_rect(&self) -> RECT {
         RECT { left: self.pos_x, right: self.pos_x + self.size_x, top: self.pos_y, bottom: self.pos_y + self.size_y }
     }
 }

@@ -1,7 +1,7 @@
 use device_query::{DeviceQuery, DeviceState, Keycode};
 
 use crate::hotkeys::profile::*;
-use crate::snapt::control;
+use crate::snapt::app;
 
 const INPUT_TIME_BUFFER_MS: u64 = 180;
 
@@ -10,7 +10,7 @@ pub fn start(hotkey_profile: Profile) {
         let device_state = DeviceState::new();
         
         loop {
-            if control::get_do_exit() {
+            if app::get_do_exit() {
                 break;
             }
 
@@ -20,7 +20,7 @@ pub fn start(hotkey_profile: Profile) {
 }
 
 fn monitor_keys(device_state: &DeviceState, hotkey_profile: &Profile) {
-    if !control::get_do_pause() {
+    if !app::get_do_pause() {
         let keys: Vec<Keycode> = device_state.get_keys();
         let did_process = hotkey_profile.process_incoming_keys(&keys);
 

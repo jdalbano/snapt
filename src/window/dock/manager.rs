@@ -52,7 +52,7 @@ unsafe fn get_transform_for_dock_change(window: &mut HWND, dock_position: Positi
                 let opposite_position_option = dock_position.get_opposite_position();
 
                 if let Some(opposite_position) = opposite_position_option {
-                    let current_screen = screen_transform.convert_to_rect();
+                    let current_screen = screen_transform.to_rect();
                     let next_screen_point_option = get_point_on_next_screen_for_transform(current_screen, &dock_position);
 
                     if let Some(next_screen_point) = next_screen_point_option {
